@@ -175,6 +175,12 @@ resource "aws_s3_bucket" "backup" {
   tags = {
     Name = var.s3_bucket_name
   }
+
+  # Avoid indefinite wait if the API stalls; surface a clear timeout error instead.
+  timeouts {
+    create = "15m"
+    delete = "15m"
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "backup" {
@@ -186,13 +192,6 @@ resource "aws_s3_bucket_public_access_block" "backup" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_versioning" "backup" {
-  bucket = aws_s3_bucket.backup.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
 resource "aws_s3_bucket_server_side_encryption_configuration" "backup" {
   bucket = aws_s3_bucket.backup.id
 
@@ -201,23 +200,4 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backup" {
       sse_algorithm = "AES256"
     }
   }
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "backup" {
-  bucket = aws_s3_bucket.backup.id
-
-  rule {
-    id     = "expire-backups-prefix"
-    status = "Enabled"
-
-    filter {
-      prefix = "backups/"
-    }
-
-    expiration {
-      days = 30
-    }
-  }
-
-  depends_on = [aws_s3_bucket_versioning.backup]
 }
