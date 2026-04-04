@@ -534,91 +534,27 @@
     return esc(r.service_tag || r.device_id || r.model || '—');
   }
 
+  /** Dashboard-style grid (matches design spec). Full ISO field set remains in Export All / edit modal. */
   function renderEmployeeTable(rows) {
     const thead = $('#data-thead');
     const tbody = $('#data-tbody');
     const ch = state.empChip;
-
-    if (ch === 'all') {
-      thead.innerHTML = `<tr>
-        <th>Category</th><th>Asset Type</th><th>Manufacturer</th><th>Tag / ID</th><th>Model</th>
-        <th>Asset Owner</th><th>Assigned To</th><th>Asset Status</th><th>Dept</th><th>Location</th>
-        <th>Contains PII</th><th>ISO Class</th><th>Actions</th></tr>`;
-      tbody.innerHTML = rows.map((r) => `<tr>
-        <td>${esc(catLabel(r.__table))}</td><td>${esc(r.asset_type)}</td><td>${esc(r.asset_manufacturer)}</td>
-        <td>${tagCell(r)}</td><td>${esc(r.model)}</td>
-        <td>${esc(r.asset_owner)}</td><td>${esc(r.assigned_to)}</td><td>${badgeStatusAsset(r.asset_status)}</td>
-        <td>${esc(r.dept)}</td><td>${formatLocationDisplay(r.location)}</td>
-        <td>${badgePii(r.contains_pii)}</td><td>${badgeIso(r.iso_classification)}</td>
-        ${actionsCell(empActions(r, r.__table))}</tr>`).join('');
-      return;
-    }
-
-    if (ch === 'laptop') {
-      thead.innerHTML = `<tr>
-        <th>Asset Type</th><th>Manufacturer</th><th>Service Tag</th><th>Model</th><th>P/N</th>
-        <th>Asset Owner</th><th>Assigned To</th><th>Asset Status</th><th>Last Owner</th>
-        <th>Dept</th><th>Location</th><th>Asset Health</th><th>Warranty</th><th>Install Date</th>
-        <th>Date Added/Updated</th><th>Processor</th><th>RAM</th><th>Hard Disk</th><th>O/S</th>
-        <th>Supt Vendor</th><th>Keyboard</th><th>Mouse</th><th>Headphone</th><th>USB Extender</th>
-        <th>Contains PII</th><th>ISO Class</th><th>Actions</th></tr>`;
-      tbody.innerHTML = rows.map((r) => `<tr>
-        <td>${esc(r.asset_type)}</td><td>${esc(r.asset_manufacturer)}</td><td>${esc(r.service_tag)}</td><td>${esc(r.model)}</td><td>${esc(r.pn)}</td>
-        <td>${esc(r.asset_owner)}</td><td>${esc(r.assigned_to)}</td><td>${badgeStatusAsset(r.asset_status)}</td><td>${esc(r.last_owner)}</td>
-        <td>${esc(r.dept)}</td><td>${formatLocationDisplay(r.location)}</td><td>${badgeHealth(r.asset_health)}</td>
-        <td>${esc(r.warranty)}</td><td>${esc(r.install_date)}</td><td>${esc(r.date_added_updated)}</td>
-        <td>${esc(r.processor)}</td><td>${esc(r.ram)}</td><td>${esc(r.hard_disk)}</td><td>${esc(r.os)}</td>
-        <td>${esc(r.supt_vendor)}</td><td>${esc(r.keyboard)}</td><td>${esc(r.mouse)}</td><td>${esc(r.headphone)}</td><td>${esc(r.usb_extender)}</td>
-        <td>${badgePii(r.contains_pii)}</td><td>${badgeIso(r.iso_classification)}</td>
-        ${actionsCell(empActions(r, 'laptops'))}</tr>`).join('');
-      return;
-    }
-
-    if (ch === 'desktop') {
-      thead.innerHTML = `<tr>
-        <th>Asset Type</th><th>Manufacturer</th><th>Service Tag</th><th>Model</th><th>P/N</th>
-        <th>Asset Owner</th><th>Assigned To</th><th>Asset Status</th><th>Last Owner</th>
-        <th>Dept</th><th>Location</th><th>Asset Health</th><th>Warranty</th><th>Install Date</th>
-        <th>Date Added/Updated</th><th>Processor</th><th>O/S</th><th>Supt Vendor</th><th>Configuration</th>
-        <th>Contains PII</th><th>ISO Class</th><th>Actions</th></tr>`;
-      tbody.innerHTML = rows.map((r) => `<tr>
-        <td>${esc(r.asset_type)}</td><td>${esc(r.asset_manufacturer)}</td><td>${esc(r.service_tag)}</td><td>${esc(r.model)}</td><td>${esc(r.pn)}</td>
-        <td>${esc(r.asset_owner)}</td><td>${esc(r.assigned_to)}</td><td>${badgeStatusAsset(r.asset_status)}</td><td>${esc(r.last_owner)}</td>
-        <td>${esc(r.dept)}</td><td>${formatLocationDisplay(r.location)}</td><td>${badgeHealth(r.asset_health)}</td>
-        <td>${esc(r.warranty)}</td><td>${esc(r.install_date)}</td><td>${esc(r.date_added_updated)}</td>
-        <td>${esc(r.processor)}</td><td>${esc(r.os)}</td><td>${esc(r.supt_vendor)}</td><td>${esc(r.configuration)}</td>
-        <td>${badgePii(r.contains_pii)}</td><td>${badgeIso(r.iso_classification)}</td>
-        ${actionsCell(empActions(r, 'desktops'))}</tr>`).join('');
-      return;
-    }
-
-    if (ch === 'monitor') {
-      thead.innerHTML = `<tr>
-        <th>Asset Type</th><th>Manufacturer</th><th>Service Tag</th><th>Model</th><th>P/N</th>
-        <th>Asset Owner</th><th>Assigned To</th><th>Asset Status</th><th>Dept</th><th>Location</th>
-        <th>Asset Health</th><th>Warranty</th><th>Install Date</th><th>Date Added/Updated</th>
-        <th>Supt Vendor</th><th>Contains PII</th><th>ISO Class</th><th>Actions</th></tr>`;
-      tbody.innerHTML = rows.map((r) => `<tr>
-        <td>${esc(r.asset_type)}</td><td>${esc(r.asset_manufacturer)}</td><td>${esc(r.service_tag)}</td><td>${esc(r.model)}</td><td>${esc(r.pn)}</td>
-        <td>${esc(r.asset_owner)}</td><td>${esc(r.assigned_to)}</td><td>${badgeStatusAsset(r.asset_status)}</td>
-        <td>${esc(r.dept)}</td><td>${formatLocationDisplay(r.location)}</td><td>${badgeHealth(r.asset_health)}</td>
-        <td>${esc(r.warranty)}</td><td>${esc(r.install_date)}</td><td>${esc(r.date_added_updated)}</td>
-        <td>${esc(r.supt_vendor)}</td><td>${badgePii(r.contains_pii)}</td><td>${badgeIso(r.iso_classification)}</td>
-        ${actionsCell(empActions(r, 'monitors'))}</tr>`).join('');
-      return;
-    }
-
     thead.innerHTML = `<tr>
-      <th>Asset Type</th><th>Manufacturer</th><th>Model</th><th>P/N</th><th>Asset Owner</th><th>Assigned To</th>
-      <th>Asset Status</th><th>Dept</th><th>Location</th><th>Warranty</th><th>Install Date</th>
-      <th>Date Added/Updated</th><th>Supt Vendor</th><th>Linked Device</th><th>Contains PII</th><th>ISO Class</th><th>Actions</th></tr>`;
-    tbody.innerHTML = rows.map((r) => `<tr>
-      <td>${esc(r.asset_type)}</td><td>${esc(r.asset_manufacturer)}</td><td>${esc(r.model)}</td><td>${esc(r.pn)}</td>
-      <td>${esc(r.asset_owner)}</td><td>${esc(r.assigned_to)}</td><td>${badgeStatusAsset(r.asset_status)}</td>
-      <td>${esc(r.dept)}</td><td>${formatLocationDisplay(r.location)}</td><td>${esc(r.warranty)}</td>
-      <td>${esc(r.install_date)}</td><td>${esc(r.date_added_updated)}</td><td>${esc(r.supt_vendor)}</td>
-      <td>${esc(r.linked_device_tag)}</td><td>${badgePii(r.contains_pii)}</td><td>${badgeIso(r.iso_classification)}</td>
-      ${actionsCell(empActions(r, 'accessories'))}</tr>`).join('');
+      <th>Type</th><th>Service tag</th><th>Model</th><th>Assigned to</th>
+      <th>Dept</th><th>Location</th><th>Status</th><th>Actions</th></tr>`;
+    tbody.innerHTML = rows.map((r) => {
+      const tbl = r.__table;
+      const typeDisp = ch === 'all' ? catLabel(tbl) : esc(r.asset_type);
+      return `<tr>
+        <td>${typeDisp}</td>
+        <td>${tagCell(r)}</td>
+        <td>${esc(r.model)}</td>
+        <td>${esc(r.assigned_to)}</td>
+        <td>${esc(r.dept)}</td>
+        <td>${formatLocationDisplay(r.location)}</td>
+        <td>${badgeStatusAsset(r.asset_status)}</td>
+        ${actionsCell(empActions(r, tbl))}</tr>`;
+    }).join('');
   }
 
   function admActions(r, table) {
@@ -826,6 +762,58 @@
     if (!show) $('#result-bar').hidden = true;
   }
 
+  function setFilterPiiIsoVisible() {
+    const emp = state.tab === 'employee';
+    const pi = $('#filter-pii-wrap');
+    const iso = $('#filter-iso-wrap');
+    if (pi) pi.hidden = emp;
+    if (iso) iso.hidden = emp;
+  }
+
+  function updateSectionContext() {
+    const ctx = $('#section-context');
+    const help = $('#audit-help');
+    const title = $('#section-title');
+    const sub = $('#section-subtitle');
+    if (!ctx || !title) return;
+    if (state.tab === 'audit') {
+      ctx.hidden = true;
+      if (help) help.hidden = false;
+      return;
+    }
+    if (help) help.hidden = true;
+    ctx.hidden = false;
+    const M = {
+      employee: ['Employee devices', 'Laptop · Desktop · Monitor · Accessories'],
+      networking: ['Network', 'Physical network assets (switches, APs, cabling-related records)'],
+      cloud: ['Cloud assets', 'Subscriptions and cloud-hosted resources'],
+      infodesk: ['Infodesk applications', 'Internal applications and tools'],
+      third_party: ['Third party software', 'External software and SaaS'],
+      admin: ['Admin devices', 'UPS · Mobile phones · Scanners & printers · Cameras & DVR'],
+      gatepass: ['Gate pass', 'Material movement register'],
+      leavers: ['Leavers / IT exit', 'Access revocation and hardware checklist'],
+    };
+    const pair = M[state.tab] || ['', ''];
+    title.textContent = pair[0];
+    sub.textContent = pair[1];
+  }
+
+  function updateEmployeeChipCounts() {
+    const s = state.stats || {};
+    const map = {
+      all: (s.laptops || 0) + (s.desktops || 0) + (s.monitors || 0) + (s.accessories || 0),
+      laptop: s.laptops || 0,
+      desktop: s.desktops || 0,
+      monitor: s.monitors || 0,
+      accessory: s.accessories || 0,
+    };
+    Object.keys(map).forEach((k) => {
+      document.querySelectorAll(`[data-emp-count="${k}"]`).forEach((el) => {
+        el.textContent = `(${map[k]})`;
+      });
+    });
+  }
+
   function updateToolbar() {
     const ex = $('#toolbar-extra');
     ex.innerHTML = '';
@@ -987,6 +975,7 @@
       document.querySelectorAll('[data-tab-count="gatepass"]').forEach((el) => { el.textContent = s.gatepass || 0; });
       document.querySelectorAll('[data-tab-count="leavers"]').forEach((el) => { el.textContent = s.leavers_checklist || 0; });
       document.querySelectorAll('[data-tab-count="audit"]').forEach((el) => { el.textContent = s.audit_log || 0; });
+      updateEmployeeChipCounts();
     } catch (_) { /* ignore */ }
   }
 
@@ -1572,6 +1561,8 @@
     $('#chips-employee').hidden = tab !== 'employee';
     $('#chips-admin').hidden = tab !== 'admin';
     setFiltersVisible(tab !== 'audit');
+    setFilterPiiIsoVisible();
+    updateSectionContext();
     updateToolbar();
     try {
       await loadTabData();

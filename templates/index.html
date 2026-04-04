@@ -13,21 +13,21 @@
         <h1 class="brand">Employee Asset Register</h1>
       </div>
       <div class="topbar-right">
-        <button type="button" class="btn btn-export" id="btn-export-all" title="Sheets: Asset register summary&#10;Laptops · Desktops · Monitors · Accessories&#10;Networking&#10;Cloud Assets&#10;Infodesk Applications&#10;Third Party Software&#10;UPS · Mobile Phones · Scanners &amp; Printers · Cameras &amp; DVR">
+        <button type="button" class="btn btn-export" id="btn-export-all">
           ↓ Export All
         </button>
-        <button type="button" class="btn btn-primary" id="btn-add-asset">+ Add Asset</button>
+        <button type="button" class="btn btn-primary" id="btn-add-asset">+ Add asset</button>
       </div>
     </header>
 
     <nav class="tabs" id="main-tabs" aria-label="Main sections">
       <button type="button" class="tab active" data-tab="employee">
         <span class="tab-dot" style="background:#185FA5"></span>
-        Employee Devices <span class="badge-count" data-tab-count="employee">0</span>
+        Employee devices <span class="badge-count" data-tab-count="employee">0</span>
       </button>
       <button type="button" class="tab" data-tab="networking">
         <span class="tab-dot" style="background:#534AB7"></span>
-        Networking <span class="badge-count" data-tab-count="networking">0</span>
+        Network <span class="badge-count" data-tab-count="networking">0</span>
       </button>
       <button type="button" class="tab" data-tab="cloud">
         <span class="tab-dot" style="background:#0C447C"></span>
@@ -55,17 +55,25 @@
       </button>
       <button type="button" class="tab" data-tab="audit">
         <span class="tab-dot" style="background:#444441"></span>
-        Audit Log <span class="badge-count" data-tab-count="audit">0</span>
+        Audit log <span class="badge-count" data-tab-count="audit">0</span>
       </button>
     </nav>
 
+    <div class="section-context" id="section-context" hidden>
+      <h2 class="section-title" id="section-title"></h2>
+      <p class="section-subtitle muted" id="section-subtitle"></p>
+    </div>
+    <p class="section-help muted" id="audit-help" hidden>
+      Read-only trail: who changed asset data (create/update/delete) and each <code>/api/…</code> call (method, path, HTTP status, optional user header, IP). Use filters and pagination to review activity for ISO evidence — not editable here.
+    </p>
+
     <div class="chips-row tab-chips" id="chips-employee" hidden>
       <span class="chips-label">Type:</span>
-      <button type="button" class="chip active" data-emp-chip="all">All</button>
-      <button type="button" class="chip" data-emp-chip="laptop">Laptop</button>
-      <button type="button" class="chip" data-emp-chip="desktop">Desktop</button>
-      <button type="button" class="chip" data-emp-chip="monitor">Monitor</button>
-      <button type="button" class="chip" data-emp-chip="accessory">Accessories</button>
+      <button type="button" class="chip active" data-emp-chip="all">All <span class="chip-count" data-emp-count="all">(0)</span></button>
+      <button type="button" class="chip" data-emp-chip="laptop">Laptop <span class="chip-count" data-emp-count="laptop">(0)</span></button>
+      <button type="button" class="chip" data-emp-chip="desktop">Desktop <span class="chip-count" data-emp-count="desktop">(0)</span></button>
+      <button type="button" class="chip" data-emp-chip="monitor">Monitor <span class="chip-count" data-emp-count="monitor">(0)</span></button>
+      <button type="button" class="chip" data-emp-chip="accessory">Accessories <span class="chip-count" data-emp-count="accessory">(0)</span></button>
     </div>
     <div class="chips-row tab-chips" id="chips-admin" hidden>
       <span class="chips-label">Type:</span>
@@ -79,9 +87,9 @@
     <section class="toolbar" id="section-toolbar">
       <div class="toolbar-left" id="toolbar-extra"></div>
       <div class="filters" id="filters-bar">
-        <input type="search" class="filter-search" id="f-search" placeholder="Search…" autocomplete="off" />
+        <input type="search" class="filter-search" id="f-search" placeholder="Search by name, tag, assigned to…" autocomplete="off" />
         <select id="f-status" class="filter-select" aria-label="Status">
-          <option value="All">All statuses</option>
+          <option value="All">All status</option>
           <option>Active</option>
           <option>Idle</option>
           <option>Maintenance</option>
@@ -89,14 +97,14 @@
         </select>
         <select id="f-dept" class="filter-select" aria-label="Department"><option value="All">All departments</option></select>
         <select id="f-location" class="filter-select" aria-label="Location"><option value="All">All locations</option></select>
-        <select id="f-pii" class="filter-select" aria-label="PII"><option value="All">All PII</option><option>Yes</option><option>No</option></select>
-        <select id="f-iso" class="filter-select" aria-label="Classification">
+        <span id="filter-pii-wrap"><select id="f-pii" class="filter-select" aria-label="PII"><option value="All">All PII</option><option>Yes</option><option>No</option></select></span>
+        <span id="filter-iso-wrap"><select id="f-iso" class="filter-select" aria-label="Classification">
           <option value="All">All classes</option>
           <option>Public</option>
           <option>Internal</option>
           <option>Confidential</option>
           <option>Restricted</option>
-        </select>
+        </select></span>
       </div>
     </section>
 

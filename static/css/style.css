@@ -170,6 +170,45 @@ html, body {
   color: var(--blue-dark);
 }
 
+.chip-count {
+  font-weight: 600;
+  opacity: 0.88;
+}
+
+.section-context {
+  padding: 14px 0 2px;
+}
+
+.section-title {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: 13px;
+}
+
+.section-help {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 52rem;
+}
+
+.section-help code {
+  font-size: 12px;
+  background: #eceae4;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
