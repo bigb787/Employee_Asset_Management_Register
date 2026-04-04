@@ -28,14 +28,8 @@ sudo systemctl daemon-reload
 sudo systemctl enable asset-register
 sudo systemctl start asset-register || sudo systemctl restart asset-register
 
-sudo cp nginx.conf /etc/nginx/sites-available/asset-register
-sudo ln -sf /etc/nginx/sites-available/asset-register /etc/nginx/sites-enabled/asset-register
-sudo rm -f /etc/nginx/sites-enabled/default
-# Jammy+ sometimes ships a default in conf.d that still captures :80
-sudo rm -f /etc/nginx/conf.d/default.conf
 sudo systemctl enable nginx
-sudo nginx -t
-sudo systemctl restart nginx
+bash scripts/ensure-nginx-proxy.sh /home/ubuntu/Employee_Asset_Management_Register
 
 (crontab -l 2>/dev/null | grep -v asset-backup.log; echo "0 2 * * * /home/ubuntu/Employee_Asset_Management_Register/scripts/backup.sh >> /var/log/asset-backup.log 2>&1") | crontab -
 (crontab -l 2>/dev/null | grep -v asset-health.log; echo "*/5 * * * * /home/ubuntu/Employee_Asset_Management_Register/scripts/healthcheck.sh >> /var/log/asset-health.log 2>&1") | crontab -
