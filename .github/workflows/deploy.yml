@@ -1,7 +1,13 @@
-# Secrets: https://github.com/bigb787/Employee_Asset_Management_Register/settings/secrets/actions
-# EC2_HOST, EC2_USER, EC2_SSH_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# Test runs on every push to main.
+# Deploy runs only when you start the workflow manually (after EC2 secrets exist).
+#
+# Add secrets: https://github.com/bigb787/Employee_Asset_Management_Register/settings/secrets/actions
+#   EC2_HOST     — public IP from Terraform
+#   EC2_USER     — ubuntu
+#   EC2_SSH_KEY  — full .pem private key contents
+# (AWS_* secrets only if you add separate AWS steps later.)
 
-name: Deploy Employee Asset Register
+name: CI and deploy
 
 on:
   push:
@@ -24,6 +30,8 @@ jobs:
 
   deploy:
     needs: test
+    # Avoid "missing server host" when EC2 secrets are not configured yet.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: appleboy/ssh-action@v1.0.3
