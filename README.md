@@ -98,7 +98,8 @@ Pinned in `requirements.txt`: FastAPI, uvicorn, python-multipart, python-dotenv,
 ```bash
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-# Edit: aws_region, aws_profile, public_key_path, s3_bucket_name, etc.
+# Default region in code is us-east-1 (N. Virginia). Override aws_region in tfvars if needed.
+# Edit: aws_profile, public_key_path, s3_bucket_name, etc.
 
 terraform init
 terraform plan
