@@ -1,24 +1,54 @@
-.env
-data/*.db
-data/*.db-shm
-data/*.db-wal
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
 venv/
 .venv/
-*.pem
-*.key
-*.pub
+env/
+.env
+
+# Database
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# Backups
+backups/
+
+# Terraform
 terraform/.terraform/
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
-terraform/.terraform.lock.hcl
-terraform/*.tfvars
-backups/
-*.xlsx
-*.pdf
+terraform/terraform.tfvars
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+
+# Secrets / credentials
+.env
+*.pem
+*.key
+!*.key.example
+asset-register
+asset-register.pub
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Logs
 *.log
-node_modules/
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

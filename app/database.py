@@ -1,376 +1,31 @@
-"""
-SQLite database layer: schema, CRUD, audit logging, gatepass numbers, S3 helpers.
-Uses parameterized queries only. AWS: profile my-aws-project (override via AWS_PROFILE).
-"""
-from __future__ import annotations
-
-import json
 import os
-import sqlite3
-from datetime import date, datetime
-from pathlib import Path
+import json
+import aiosqlite
+import boto3
+from datetime import datetime, date
 from typing import Any, Optional
 
-# ---------------------------------------------------------------------------
-# Paths & constants
-# ---------------------------------------------------------------------------
+DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/assets.db")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "")
+AWS_REGION     = os.getenv("AWS_DEFAULT_REGION", "ap-south-1")
+AWS_PROFILE    = os.getenv("AWS_PROFILE", "my-asset-project")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_DB_PATH = BASE_DIR / "data" / "assets.db"
+# Locations allowed throughout the application
+LOCATIONS = ["India", "US", "UK", "Sweden"]
 
-VALID_TABLES = frozenset(
-    {
-        "laptops",
-        "desktops",
-        "monitors",
-        "accessories",
-        "networking",
-        "cloud_assets",
-        "infodesk_applications",
-        "third_party_software",
-        "ups",
-        "mobile_phones",
-        "scanners_printers",
-        "cameras_dvr",
-        "gatepass",
-        "leavers_checklist",
-        "audit_log",
-    }
-)
-
-# Writable columns per table (excludes id; timestamps managed in SQL where noted).
-TABLE_WRITABLE_COLUMNS: dict[str, frozenset[str]] = {
-    "laptops": frozenset(
-        {
-            "asset_type",
-            "asset_manufacturer",
-            "service_tag",
-            "model",
-            "pn",
-            "asset_owner",
-            "assigned_to",
-            "asset_status",
-            "last_owner",
-            "dept",
-            "location",
-            "asset_health",
-            "warranty",
-            "install_date",
-            "date_added_updated",
-            "processor",
-            "ram",
-            "hard_disk",
-            "os",
-            "supt_vendor",
-            "keyboard",
-            "mouse",
-            "headphone",
-            "usb_extender",
-            "contains_pii",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "desktops": frozenset(
-        {
-            "asset_type",
-            "asset_manufacturer",
-            "service_tag",
-            "model",
-            "pn",
-            "asset_owner",
-            "assigned_to",
-            "asset_status",
-            "last_owner",
-            "dept",
-            "location",
-            "asset_health",
-            "warranty",
-            "install_date",
-            "date_added_updated",
-            "processor",
-            "os",
-            "supt_vendor",
-            "configuration",
-            "contains_pii",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "monitors": frozenset(
-        {
-            "asset_type",
-            "asset_manufacturer",
-            "service_tag",
-            "model",
-            "pn",
-            "asset_owner",
-            "assigned_to",
-            "asset_status",
-            "dept",
-            "location",
-            "asset_health",
-            "warranty",
-            "install_date",
-            "date_added_updated",
-            "supt_vendor",
-            "contains_pii",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "accessories": frozenset(
-        {
-            "asset_type",
-            "asset_manufacturer",
-            "model",
-            "pn",
-            "asset_owner",
-            "assigned_to",
-            "asset_status",
-            "dept",
-            "location",
-            "warranty",
-            "install_date",
-            "date_added_updated",
-            "supt_vendor",
-            "linked_device_tag",
-            "contains_pii",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "networking": frozenset(
-        {
-            "asset_type",
-            "asset_id",
-            "mac_id",
-            "asset_owner",
-            "location",
-            "model",
-            "sn",
-            "pn",
-            "warranty",
-            "install_date",
-            "os",
-            "supt_vendor",
-            "dept",
-            "configuration",
-            "contains_pii",
-            "date_added_updated",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "cloud_assets": frozenset(
-        {
-            "asset",
-            "asset_type",
-            "asset_value",
-            "asset_owner",
-            "asset_location",
-            "contains_pii",
-            "asset_region",
-            "date_added_updated",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "infodesk_applications": frozenset(
-        {
-            "asset",
-            "asset_type",
-            "asset_value",
-            "asset_owner",
-            "asset_location",
-            "contains_pii",
-            "date_added_updated",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "third_party_software": frozenset(
-        {
-            "asset",
-            "asset_type",
-            "asset_value",
-            "asset_owner",
-            "asset_location",
-            "contains_pii",
-            "date_added_updated",
-            "cve_alert",
-            "setup",
-            "billing_api",
-            "patch_status",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "ups": frozenset(
-        {
-            "asset_type",
-            "device_id",
-            "location",
-            "model",
-            "warranty",
-            "install_date",
-            "supt_vendor",
-            "dept",
-            "asset_owner",
-            "contains_pii",
-            "date_added_updated",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "mobile_phones": frozenset(
-        {
-            "asset_type",
-            "device_id",
-            "location",
-            "model",
-            "pn",
-            "warranty",
-            "supt_vendor",
-            "dept",
-            "asset_owner",
-            "contains_pii",
-            "date_added_updated",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "scanners_printers": frozenset(
-        {
-            "asset_type",
-            "device_id",
-            "location",
-            "model",
-            "service_tag",
-            "pn",
-            "warranty",
-            "supt_vendor",
-            "dept",
-            "description",
-            "asset_owner",
-            "contains_pii",
-            "date_added_updated",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "cameras_dvr": frozenset(
-        {
-            "asset_type",
-            "location",
-            "invoice_no",
-            "warranty",
-            "install_date",
-            "supt_vendor",
-            "dept",
-            "asset_owner",
-            "contains_pii",
-            "date_added_updated",
-            "iso_classification",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "gatepass": frozenset(
-        {
-            "gatepass_no",
-            "gatepass_date",
-            "pass_type",
-            "issued_to",
-            "person",
-            "dept_head",
-            "security_guard",
-            "receiver_name",
-            "asset_items",
-            "expected_return_date",
-            "actual_return_date",
-            "status",
-            "remarks",
-            "iso_ref",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "leavers_checklist": frozenset(
-        {
-            "employee_name",
-            "date_of_leaving",
-            "department",
-            "line_manager",
-            "email_address",
-            "email_groups",
-            "infodesk_qa_dev",
-            "infodesk_prod",
-            "jira_and_wiki",
-            "ms_office",
-            "mongo_access",
-            "azure_infodesk",
-            "azure_wn_infodesk",
-            "vpn",
-            "wn_vpn",
-            "azure_devops",
-            "info_admin",
-            "zabbix",
-            "github",
-            "infodesk_portal",
-            "salesforce",
-            "hw_inventory_location",
-            "hw_handed_over",
-            "evidence_file_name",
-            "evidence_file_s3_key",
-            "evidence_file_url",
-            "evidence_uploaded_at",
-            "evidence_uploaded_by",
-            "it_peer_review",
-            "it_peer_reviewer",
-            "it_peer_review_date",
-            "reporting_manager",
-            "reporting_manager_name",
-            "reporting_manager_date",
-            "confirmation_audit",
-            "confirmation_audit_by",
-            "confirmation_audit_date",
-            "communication_github_ticket",
-            "overall_status",
-            "notes",
-            "iso_ref",
-            "created_by",
-            "updated_by",
-        }
-    ),
-    "audit_log": frozenset(
-        {
-            "table_name",
-            "record_id",
-            "action",
-            "changed_fields",
-            "old_values",
-            "new_values",
-            "performed_by",
-            "ip_address",
-            "iso_ref",
-        }
-    ),
+# Whitelisted table names (prevents SQL-injection via table parameter)
+ALLOWED_TABLES = {
+    "laptops", "desktops", "monitors", "accessories",
+    "networking", "cloud_assets", "infodesk_applications",
+    "third_party_software", "ups", "mobile_phones",
+    "scanners_printers", "cameras_dvr", "gatepass",
+    "leavers_checklist", "audit_log",
 }
 
-DDL_STATEMENTS = [
-    """
+# ---------------------------------------------------------------------------
+# DDL — all tables
+# ---------------------------------------------------------------------------
+_DDL = """
 CREATE TABLE IF NOT EXISTS laptops (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT DEFAULT 'Laptop',
@@ -398,14 +53,12 @@ CREATE TABLE IF NOT EXISTS laptops (
   headphone TEXT,
   usb_extender TEXT,
   contains_pii TEXT DEFAULT 'No',
-  iso_classification TEXT DEFAULT 'Internal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS desktops (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT DEFAULT 'Desktop',
@@ -428,14 +81,12 @@ CREATE TABLE IF NOT EXISTS desktops (
   supt_vendor TEXT,
   configuration TEXT,
   contains_pii TEXT DEFAULT 'No',
-  iso_classification TEXT DEFAULT 'Internal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS monitors (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT DEFAULT 'Monitor',
@@ -454,14 +105,12 @@ CREATE TABLE IF NOT EXISTS monitors (
   date_added_updated TEXT,
   supt_vendor TEXT,
   contains_pii TEXT DEFAULT 'No',
-  iso_classification TEXT DEFAULT 'Internal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS accessories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT,
@@ -479,14 +128,12 @@ CREATE TABLE IF NOT EXISTS accessories (
   supt_vendor TEXT,
   linked_device_tag TEXT,
   contains_pii TEXT DEFAULT 'No',
-  iso_classification TEXT DEFAULT 'Internal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS networking (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT,
@@ -505,14 +152,12 @@ CREATE TABLE IF NOT EXISTS networking (
   configuration TEXT,
   contains_pii TEXT DEFAULT 'No',
   date_added_updated TEXT,
-  iso_classification TEXT DEFAULT 'Confidential',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS cloud_assets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset TEXT,
@@ -523,14 +168,12 @@ CREATE TABLE IF NOT EXISTS cloud_assets (
   contains_pii TEXT DEFAULT 'No',
   asset_region TEXT,
   date_added_updated TEXT,
-  iso_classification TEXT DEFAULT 'Confidential',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS infodesk_applications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset TEXT,
@@ -540,14 +183,12 @@ CREATE TABLE IF NOT EXISTS infodesk_applications (
   asset_location TEXT,
   contains_pii TEXT DEFAULT 'No',
   date_added_updated TEXT,
-  iso_classification TEXT DEFAULT 'Confidential',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS third_party_software (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset TEXT,
@@ -561,14 +202,12 @@ CREATE TABLE IF NOT EXISTS third_party_software (
   setup TEXT,
   billing_api TEXT,
   patch_status TEXT DEFAULT 'Up to date',
-  iso_classification TEXT DEFAULT 'Confidential',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS ups (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT DEFAULT 'UPS',
@@ -582,14 +221,12 @@ CREATE TABLE IF NOT EXISTS ups (
   asset_owner TEXT,
   contains_pii TEXT DEFAULT 'No',
   date_added_updated TEXT,
-  iso_classification TEXT DEFAULT 'Internal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS mobile_phones (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT DEFAULT 'Mobile Phone',
@@ -603,14 +240,12 @@ CREATE TABLE IF NOT EXISTS mobile_phones (
   asset_owner TEXT,
   contains_pii TEXT DEFAULT 'No',
   date_added_updated TEXT,
-  iso_classification TEXT DEFAULT 'Internal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS scanners_printers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT,
@@ -626,14 +261,12 @@ CREATE TABLE IF NOT EXISTS scanners_printers (
   asset_owner TEXT,
   contains_pii TEXT DEFAULT 'No',
   date_added_updated TEXT,
-  iso_classification TEXT DEFAULT 'Internal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS cameras_dvr (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   asset_type TEXT,
@@ -646,14 +279,12 @@ CREATE TABLE IF NOT EXISTS cameras_dvr (
   asset_owner TEXT,
   contains_pii TEXT DEFAULT 'Yes',
   date_added_updated TEXT,
-  iso_classification TEXT DEFAULT 'Confidential',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS gatepass (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   gatepass_no TEXT UNIQUE NOT NULL,
@@ -669,14 +300,12 @@ CREATE TABLE IF NOT EXISTS gatepass (
   actual_return_date TEXT,
   status TEXT DEFAULT 'Open',
   remarks TEXT,
-  iso_ref TEXT DEFAULT 'A.5.11',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS leavers_checklist (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   employee_name TEXT NOT NULL,
@@ -719,14 +348,12 @@ CREATE TABLE IF NOT EXISTS leavers_checklist (
   communication_github_ticket TEXT,
   overall_status TEXT DEFAULT 'In Progress',
   notes TEXT,
-  iso_ref TEXT DEFAULT 'A.6.5, A.5.11, A.8.1',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by TEXT,
   updated_by TEXT
 );
-""",
-    """
+
 CREATE TABLE IF NOT EXISTS audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   table_name TEXT,
@@ -737,389 +364,261 @@ CREATE TABLE IF NOT EXISTS audit_log (
   new_values TEXT,
   performed_by TEXT,
   performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  ip_address TEXT,
-  iso_ref TEXT
+  ip_address TEXT
 );
-""",
-]
+"""
 
 
-def get_db_path() -> Path:
-    raw = os.getenv("DATABASE_PATH", str(DEFAULT_DB_PATH))
-    p = Path(raw)
-    if not p.is_absolute():
-        p = BASE_DIR / p
-    return p
+# ---------------------------------------------------------------------------
+# init_db
+# ---------------------------------------------------------------------------
+async def init_db() -> None:
+    os.makedirs(os.path.dirname(DATABASE_PATH) or "data", exist_ok=True)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        for statement in _DDL.strip().split(";"):
+            stmt = statement.strip()
+            if stmt:
+                await db.execute(stmt)
+        await db.commit()
 
 
-def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(get_db_path(), timeout=30.0)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
-    return conn
+# ---------------------------------------------------------------------------
+# Generic CRUD helpers
+# ---------------------------------------------------------------------------
+def _check_table(table: str) -> None:
+    if table not in ALLOWED_TABLES:
+        raise ValueError(f"Table '{table}' is not allowed.")
 
 
-def _row_to_dict(row: Optional[sqlite3.Row]) -> Optional[dict[str, Any]]:
-    if row is None:
-        return None
-    return {k: row[k] for k in row.keys()}
+async def get_all(table: str, filters: Optional[dict] = None) -> list[dict]:
+    _check_table(table)
+    query = f"SELECT * FROM {table}"
+    params: list[Any] = []
+    if filters:
+        clauses = [f"{k} = ?" for k in filters]
+        query += " WHERE " + " AND ".join(clauses)
+        params = list(filters.values())
+    query += " ORDER BY id DESC"
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(query, params) as cur:
+            rows = await cur.fetchall()
+    return [dict(r) for r in rows]
 
 
-def _validate_table(table: str) -> None:
-    if table not in VALID_TABLES:
-        raise ValueError(f"Invalid table: {table}")
+async def get_by_id(table: str, record_id: int) -> Optional[dict]:
+    _check_table(table)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            f"SELECT * FROM {table} WHERE id = ?", (record_id,)
+        ) as cur:
+            row = await cur.fetchone()
+    return dict(row) if row else None
 
 
-def _filter_payload(table: str, data: dict[str, Any]) -> dict[str, Any]:
-    allowed = TABLE_WRITABLE_COLUMNS[table]
-    return {k: data[k] for k in data if k in allowed}
-
-
-def _json_safe(value: Any) -> Any:
-    if isinstance(value, (datetime, date)):
-        return value.isoformat()
-    return value
-
-
-def _serialize_row(d: Optional[dict[str, Any]]) -> str:
-    if not d:
-        return "{}"
-    return json.dumps({k: _json_safe(v) for k, v in d.items()}, default=str)
-
-
-def init_db() -> None:
-    path = get_db_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path, timeout=30.0)
-    try:
-        for stmt in DDL_STATEMENTS:
-            conn.execute(stmt)
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def log_audit(
+async def create(
     table: str,
-    record_id: int,
-    action: str,
-    old_values: Optional[dict[str, Any]],
-    new_values: Optional[dict[str, Any]],
-    performed_by: Optional[str],
-    ip_address: Optional[str],
-    iso_ref: Optional[str],
-    changed_fields: Optional[list[str]] = None,
-) -> None:
-    """Insert a row into audit_log (direct SQL; does not recurse through create())."""
-    cf = json.dumps(changed_fields) if changed_fields is not None else None
-    sql = """
-    INSERT INTO audit_log (
-      table_name, record_id, action, changed_fields, old_values, new_values,
-      performed_by, ip_address, iso_ref
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
-    try:
-        conn = _connect()
-        try:
-            conn.execute(
-                sql,
-                (
-                    table,
-                    record_id,
-                    action,
-                    cf,
-                    _serialize_row(old_values) if old_values is not None else None,
-                    _serialize_row(new_values) if new_values is not None else None,
-                    performed_by,
-                    ip_address,
-                    iso_ref,
-                ),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
+    data: dict,
+    performed_by: str = "system",
+    ip_address: str = "",
+) -> int:
+    _check_table(table)
+    now = datetime.utcnow().isoformat(sep=" ", timespec="seconds")
+    data.setdefault("created_at", now)
+    data.setdefault("updated_at", now)
+    data.setdefault("created_by", performed_by)
+    data.setdefault("updated_by", performed_by)
 
-
-def get_all(table: str) -> list[dict[str, Any]]:
-    _validate_table(table)
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(f"SELECT * FROM {table}")
-            return [_row_to_dict(r) or {} for r in cur.fetchall()]
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
-
-
-def get_by_id(table: str, row_id: int) -> Optional[dict[str, Any]]:
-    _validate_table(table)
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(f"SELECT * FROM {table} WHERE id = ?", (row_id,))
-            return _row_to_dict(cur.fetchone())
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
-
-
-def create(table: str, data: dict[str, Any], *, client_ip: Optional[str] = None) -> int:
-    _validate_table(table)
-    payload = _filter_payload(table, data)
-    cols = list(payload.keys())
-    if not cols:
-        raise ValueError("No valid fields to insert")
-    placeholders = ", ".join("?" * len(cols))
-    col_sql = ", ".join(cols)
-    sql = f"INSERT INTO {table} ({col_sql}) VALUES ({placeholders})"
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(sql, [payload[c] for c in cols])
-            conn.commit()
-            new_id = int(cur.lastrowid)
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
-
-    if table != "audit_log":
-        new_row = get_by_id(table, new_id)
-        log_audit(
-            table,
-            new_id,
-            "CREATE",
-            None,
-            new_row,
-            performed_by=payload.get("created_by") or payload.get("updated_by"),
-            ip_address=client_ip,
-            iso_ref=payload.get("iso_ref"),
-            changed_fields=list(payload.keys()),
+    columns = ", ".join(data.keys())
+    placeholders = ", ".join("?" * len(data))
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        cur = await db.execute(
+            f"INSERT INTO {table} ({columns}) VALUES ({placeholders})",
+            list(data.values()),
         )
+        await db.commit()
+        new_id = cur.lastrowid
+
+    await log_audit(
+        table=table,
+        record_id=new_id,
+        action="CREATE",
+        old_values=None,
+        new_values=data,
+        performed_by=performed_by,
+        ip_address=ip_address,
+    )
     return new_id
 
 
-def update(
-    table: str, row_id: int, data: dict[str, Any], *, client_ip: Optional[str] = None
+async def update(
+    table: str,
+    record_id: int,
+    data: dict,
+    performed_by: str = "system",
+    ip_address: str = "",
 ) -> bool:
-    _validate_table(table)
-    old = get_by_id(table, row_id)
+    _check_table(table)
+    old = await get_by_id(table, record_id)
     if old is None:
         return False
-    payload = _filter_payload(table, data)
-    if not payload:
-        return True
-    if table != "audit_log":
-        payload = {k: v for k, v in payload.items() if k not in ("created_at",)}
-    set_parts = [f"{c} = ?" for c in payload]
-    values = [payload[c] for c in payload]
-    values.append(row_id)
-    sql = f"UPDATE {table} SET {', '.join(set_parts)}, updated_at = datetime('now') WHERE id = ?"
-    if table == "audit_log":
-        sql = f"UPDATE {table} SET {', '.join(set_parts)} WHERE id = ?"
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(sql, values)
-            conn.commit()
-            updated = cur.rowcount > 0
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
 
-    if updated and table != "audit_log":
-        new_row = get_by_id(table, row_id)
-        old_sub = {k: old[k] for k in payload if k in old.keys()}
-        new_sub = {k: new_row[k] for k in payload if new_row and k in new_row.keys()}
-        changed = [
-            k
-            for k in payload
-            if new_row is not None and old.get(k) != new_row.get(k)
-        ]
-        log_audit(
-            table,
-            row_id,
-            "UPDATE",
-            old_sub,
-            new_sub,
-            performed_by=payload.get("updated_by") or payload.get("created_by") or old.get("updated_by"),
-            ip_address=client_ip,
-            iso_ref=payload.get("iso_ref") or (old.get("iso_ref") if isinstance(old.get("iso_ref"), str) else None),
-            changed_fields=changed,
+    data["updated_at"] = datetime.utcnow().isoformat(sep=" ", timespec="seconds")
+    data["updated_by"] = performed_by
+
+    set_clause = ", ".join(f"{k} = ?" for k in data)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            f"UPDATE {table} SET {set_clause} WHERE id = ?",
+            [*data.values(), record_id],
         )
-    return updated
+        await db.commit()
+
+    changed = {k: v for k, v in data.items() if old.get(k) != v}
+    await log_audit(
+        table=table,
+        record_id=record_id,
+        action="UPDATE",
+        old_values={k: old.get(k) for k in changed},
+        new_values=changed,
+        performed_by=performed_by,
+        ip_address=ip_address,
+    )
+    return True
 
 
-def delete(table: str, row_id: int, *, client_ip: Optional[str] = None) -> bool:
-    _validate_table(table)
-    old = get_by_id(table, row_id)
+async def delete(
+    table: str,
+    record_id: int,
+    performed_by: str = "system",
+    ip_address: str = "",
+) -> bool:
+    _check_table(table)
+    old = await get_by_id(table, record_id)
     if old is None:
         return False
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(f"DELETE FROM {table} WHERE id = ?", (row_id,))
-            conn.commit()
-            deleted = cur.rowcount > 0
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
 
-    if deleted and table != "audit_log":
-        log_audit(
-            table,
-            row_id,
-            "DELETE",
-            old,
-            None,
-            performed_by=old.get("updated_by") or old.get("created_by"),
-            ip_address=client_ip,
-            iso_ref=old.get("iso_ref") if isinstance(old.get("iso_ref"), str) else None,
-            changed_fields=list(old.keys()),
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(f"DELETE FROM {table} WHERE id = ?", (record_id,))
+        await db.commit()
+
+    await log_audit(
+        table=table,
+        record_id=record_id,
+        action="DELETE",
+        old_values=old,
+        new_values=None,
+        performed_by=performed_by,
+        ip_address=ip_address,
+    )
+    return True
+
+
+async def get_count(table: str) -> int:
+    _check_table(table)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute(f"SELECT COUNT(*) FROM {table}") as cur:
+            row = await cur.fetchone()
+    return row[0] if row else 0
+
+
+async def get_all_stats() -> dict:
+    tables = list(ALLOWED_TABLES - {"audit_log"})
+    stats: dict[str, int] = {}
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        for t in tables:
+            async with db.execute(f"SELECT COUNT(*) FROM {t}") as cur:
+                row = await cur.fetchone()
+            stats[t] = row[0] if row else 0
+    return stats
+
+
+# ---------------------------------------------------------------------------
+# Audit log
+# ---------------------------------------------------------------------------
+async def log_audit(
+    table: str,
+    record_id: Optional[int],
+    action: str,
+    old_values: Optional[dict],
+    new_values: Optional[dict],
+    performed_by: str,
+    ip_address: str,
+) -> None:
+    changed_fields = None
+    if old_values and new_values:
+        changed_fields = json.dumps(list(new_values.keys()))
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            """INSERT INTO audit_log
+               (table_name, record_id, action, changed_fields,
+                old_values, new_values, performed_by, ip_address)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                table,
+                record_id,
+                action,
+                changed_fields,
+                json.dumps(old_values) if old_values else None,
+                json.dumps(new_values, default=str) if new_values else None,
+                performed_by,
+                ip_address,
+            ),
         )
-    return deleted
+        await db.commit()
 
 
-def fetch_audit_log_page(
-    *,
-    table_name: Optional[str] = None,
-    from_date: Optional[str] = None,
-    to_date: Optional[str] = None,
-    page: int = 1,
-    limit: int = 50,
-) -> tuple[list[dict[str, Any]], int]:
-    """Paginated audit_log rows; filters use ISO date strings YYYY-MM-DD. All SQL parameterized."""
-    page = max(1, page)
-    limit = min(max(1, limit), 500)
-    offset = (page - 1) * limit
-    where_clauses: list[str] = ["1=1"]
-    params: list[Any] = []
-    if table_name:
-        where_clauses.append("table_name = ?")
-        params.append(table_name)
-    if from_date:
-        where_clauses.append("date(performed_at) >= date(?)")
-        params.append(from_date)
-    if to_date:
-        where_clauses.append("date(performed_at) <= date(?)")
-        params.append(to_date)
-    where_sql = " AND ".join(where_clauses)
-    count_sql = f"SELECT COUNT(*) AS c FROM audit_log WHERE {where_sql}"
-    data_sql = f"""
-    SELECT * FROM audit_log WHERE {where_sql}
-    ORDER BY performed_at DESC, id DESC
-    LIMIT ? OFFSET ?
-    """
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(count_sql, params)
-            total = int(cur.fetchone()["c"])
-            cur = conn.execute(data_sql, params + [limit, offset])
-            rows = [_row_to_dict(r) or {} for r in cur.fetchall()]
-            return rows, total
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
-
-
-def get_count(table: str) -> int:
-    _validate_table(table)
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(f"SELECT COUNT(*) AS c FROM {table}")
-            row = cur.fetchone()
-            return int(row["c"]) if row else 0
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
-
-
-def get_all_stats() -> dict[str, int]:
-    return {t: get_count(t) for t in sorted(VALID_TABLES)}
-
-
-def generate_gatepass_no() -> str:
+# ---------------------------------------------------------------------------
+# Gatepass number generator  GP-YYYYMMDD-001
+# ---------------------------------------------------------------------------
+async def generate_gatepass_no() -> str:
     today = date.today().strftime("%Y%m%d")
     prefix = f"GP-{today}-"
-    try:
-        conn = _connect()
-        try:
-            cur = conn.execute(
-                """
-                SELECT gatepass_no FROM gatepass
-                WHERE gatepass_no LIKE ?
-                ORDER BY gatepass_no DESC
-                LIMIT 1
-                """,
-                (prefix + "%",),
-            )
-            row = cur.fetchone()
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        raise
-
-    if row is None:
-        seq = 1
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute(
+            "SELECT gatepass_no FROM gatepass WHERE gatepass_no LIKE ? ORDER BY id DESC LIMIT 1",
+            (f"{prefix}%",),
+        ) as cur:
+            row = await cur.fetchone()
+    if row:
+        last_seq = int(row[0].split("-")[-1])
+        seq = last_seq + 1
     else:
-        last = row["gatepass_no"]
-        suffix = last.split("-")[-1]
-        try:
-            seq = int(suffix, 10) + 1
-        except ValueError:
-            seq = 1
+        seq = 1
     return f"{prefix}{seq:03d}"
 
 
+# ---------------------------------------------------------------------------
+# S3 helpers  (profile: my-asset-project, no hardcoded credentials)
+# ---------------------------------------------------------------------------
 def get_s3_client():
-    import boto3
-
-    profile = os.getenv("AWS_PROFILE", "my-aws-project")
-    region = os.getenv("AWS_REGION", "ap-south-1")
-    session = boto3.Session(profile_name=profile)
-    return session.client("s3", region_name=region)
+    session = boto3.Session(profile_name=AWS_PROFILE)
+    return session.client("s3", region_name=AWS_REGION)
 
 
-def upload_evidence_to_s3(
-    file_bytes: bytes, s3_key: str, content_type: str
-) -> None:
-    bucket = os.getenv("S3_BUCKET_NAME")
-    if not bucket:
-        raise RuntimeError("S3_BUCKET_NAME is not set")
-    try:
-        client = get_s3_client()
-        client.put_object(
-            Bucket=bucket,
-            Key=s3_key,
-            Body=file_bytes,
-            ContentType=content_type or "application/octet-stream",
-            ServerSideEncryption="AES256",
-        )
-    except Exception as e:
-        raise RuntimeError(f"S3 upload failed: {e}") from e
+async def upload_evidence_to_s3(
+    file_bytes: bytes,
+    s3_key: str,
+    content_type: str,
+) -> str:
+    client = get_s3_client()
+    client.put_object(
+        Bucket=S3_BUCKET_NAME,
+        Key=s3_key,
+        Body=file_bytes,
+        ContentType=content_type,
+        ServerSideEncryption="AES256",
+    )
+    return s3_key
 
 
-def get_presigned_url(s3_key: str, expiry: int = 3600) -> str:
-    bucket = os.getenv("S3_BUCKET_NAME")
-    if not bucket:
-        raise RuntimeError("S3_BUCKET_NAME is not set")
-    try:
-        client = get_s3_client()
-        return client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": bucket, "Key": s3_key},
-            ExpiresIn=expiry,
-        )
-    except Exception as e:
-        raise RuntimeError(f"S3 presign failed: {e}") from e
+async def get_presigned_url(s3_key: str, expiry: int = 3600) -> str:
+    client = get_s3_client()
+    url = client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": S3_BUCKET_NAME, "Key": s3_key},
+        ExpiresIn=expiry,
+    )
+    return url
