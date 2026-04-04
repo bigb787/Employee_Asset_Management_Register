@@ -98,7 +98,7 @@ Pinned in `requirements.txt`: FastAPI, uvicorn, python-multipart, python-dotenv,
 ```bash
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-# Default region in code is us-east-1 (N. Virginia). Override aws_region in tfvars if needed.
+# Default region in code is ap-south-1 (Mumbai). Override aws_region in tfvars if needed.
 # Edit: aws_profile, public_key_path, s3_bucket_name, etc.
 
 terraform init
@@ -106,7 +106,7 @@ terraform plan
 terraform apply
 ```
 
-Outputs include **Elastic IP**, **S3 bucket**, **SSH command**, and app URL. The S3 bucket uses versioning, SSE-S3 encryption, **30-day lifecycle** on `backups/`, and **block all public access**.
+Outputs include **Elastic IP**, **S3 bucket**, **SSH command**, and app URL. The S3 bucket uses SSE-S3 encryption and **block all public access** (no Terraform-managed versioning or lifecycle; optional pruning remains in `scripts/backup.sh`).
 
 **Security note:** The default security group allows **0.0.0.0/0** on 22/80/443. Restrict SSH to your IP in production.
 

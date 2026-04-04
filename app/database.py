@@ -1086,7 +1086,7 @@ def get_s3_client():
     import boto3
 
     profile = os.getenv("AWS_PROFILE", "my-aws-project")
-    region = os.getenv("AWS_REGION", "us-east-1")
+    region = os.getenv("AWS_REGION", "ap-south-1")
     session = boto3.Session(profile_name=profile)
     return session.client("s3", region_name=region)
 
