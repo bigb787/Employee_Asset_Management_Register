@@ -12,7 +12,6 @@ build/
 venv/
 .venv/
 env/
-.env
 
 # Database
 data/*.db
@@ -22,14 +21,15 @@ data/*.sqlite3
 # Backups
 backups/
 
-# Terraform
+# Terraform (commit terraform/.terraform.lock.hcl for reproducible provider versions)
 terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/terraform.tfvars
 *.tfvars
 !*.tfvars.example
-.terraform.lock.hcl
 
 # Secrets / credentials
 .env
