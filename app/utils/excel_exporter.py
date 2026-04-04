@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from datetime import date
 from io import BytesIO
-from typing import Any
+from typing import Any, Optional
 
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook

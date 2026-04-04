@@ -1,1 +1,19 @@
-# Populated in Step 13.
+[Unit]
+Description=Employee Asset Register FastAPI
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Employee_Asset_Management_Register
+EnvironmentFile=/home/ubuntu/Employee_Asset_Management_Register/.env
+ExecStart=/home/ubuntu/Employee_Asset_Management_Register/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

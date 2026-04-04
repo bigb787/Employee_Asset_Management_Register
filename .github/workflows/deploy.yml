@@ -27,6 +27,7 @@ jobs:
       - run: python -c "from app.database import init_db; print('DB OK')"
       - run: python -c "from app.utils.excel_exporter import export_all_assets; print('Excel OK')"
       - run: python -c "from app.utils.pdf_generator import generate_gatepass_pdf; print('PDF OK')"
+      - run: python -c "from app.utils.iso_audit import generate_iso_report; r=generate_iso_report(); assert 'iso_controls' in r; print('ISO audit OK')"
 
   deploy:
     needs: test
