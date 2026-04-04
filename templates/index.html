@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Asset Register</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="brand">Employee Asset Register</h1>
+      </div>
+      <div class="topbar-right">
+        <button type="button" class="btn btn-export" id="btn-export-all" title="Sheets: Asset register summary&#10;Laptops · Desktops · Monitors · Accessories&#10;Networking&#10;Cloud Assets&#10;Infodesk Applications&#10;Third Party Software&#10;UPS · Mobile Phones · Scanners &amp; Printers · Cameras &amp; DVR">
+          ↓ Export All
+        </button>
+        <button type="button" class="btn btn-primary" id="btn-add-asset">+ Add Asset</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="main-tabs" aria-label="Main sections">
+      <button type="button" class="tab active" data-tab="employee">
+        <span class="tab-dot" style="background:#185FA5"></span>
+        Employee Devices <span class="badge-count" data-tab-count="employee">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="networking">
+        <span class="tab-dot" style="background:#534AB7"></span>
+        Networking <span class="badge-count" data-tab-count="networking">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="cloud">
+        <span class="tab-dot" style="background:#0C447C"></span>
+        Cloud Assets <span class="badge-count" data-tab-count="cloud">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="infodesk">
+        <span class="tab-dot" style="background:#72243E"></span>
+        Infodesk Apps <span class="badge-count" data-tab-count="infodesk">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="third_party">
+        <span class="tab-dot" style="background:#534AB7"></span>
+        Third Party Software <span class="badge-count" data-tab-count="third_party">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="admin">
+        <span class="tab-dot" style="background:#712B13"></span>
+        Admin Devices <span class="badge-count" data-tab-count="admin">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="gatepass">
+        <span class="tab-dot" style="background:#0F6E56"></span>
+        Gatepass <span class="badge-count" data-tab-count="gatepass">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="leavers">
+        <span class="tab-dot" style="background:#A32D2D"></span>
+        Leavers <span class="badge-count" data-tab-count="leavers">0</span>
+      </button>
+      <button type="button" class="tab" data-tab="audit">
+        <span class="tab-dot" style="background:#444441"></span>
+        Audit Log <span class="badge-count" data-tab-count="audit">0</span>
+      </button>
+    </nav>
+
+    <div class="chips-row tab-chips" id="chips-employee" hidden>
+      <span class="chips-label">Type:</span>
+      <button type="button" class="chip active" data-emp-chip="all">All</button>
+      <button type="button" class="chip" data-emp-chip="laptop">Laptop</button>
+      <button type="button" class="chip" data-emp-chip="desktop">Desktop</button>
+      <button type="button" class="chip" data-emp-chip="monitor">Monitor</button>
+      <button type="button" class="chip" data-emp-chip="accessory">Accessories</button>
+    </div>
+    <div class="chips-row tab-chips" id="chips-admin" hidden>
+      <span class="chips-label">Type:</span>
+      <button type="button" class="chip active" data-adm-chip="all">All</button>
+      <button type="button" class="chip" data-adm-chip="ups">UPS</button>
+      <button type="button" class="chip" data-adm-chip="mobile">Mobile Phones</button>
+      <button type="button" class="chip" data-adm-chip="scanner">Scanners &amp; Printers</button>
+      <button type="button" class="chip" data-adm-chip="camera">Cameras &amp; DVR</button>
+    </div>
+
+    <section class="toolbar" id="section-toolbar">
+      <div class="toolbar-left" id="toolbar-extra"></div>
+      <div class="filters" id="filters-bar">
+        <input type="search" class="filter-search" id="f-search" placeholder="Search…" autocomplete="off" />
+        <select id="f-status" class="filter-select" aria-label="Status">
+          <option value="All">All statuses</option>
+          <option>Active</option>
+          <option>Idle</option>
+          <option>Maintenance</option>
+          <option>Faulty</option>
+        </select>
+        <select id="f-dept" class="filter-select" aria-label="Department"><option value="All">All departments</option></select>
+        <select id="f-location" class="filter-select" aria-label="Location"><option value="All">All locations</option></select>
+        <select id="f-pii" class="filter-select" aria-label="PII"><option value="All">All PII</option><option>Yes</option><option>No</option></select>
+        <select id="f-iso" class="filter-select" aria-label="Classification">
+          <option value="All">All classes</option>
+          <option>Public</option>
+          <option>Internal</option>
+          <option>Confidential</option>
+          <option>Restricted</option>
+        </select>
+      </div>
+    </section>
+
+    <div class="active-filters" id="active-filters"></div>
+    <div class="result-bar" id="result-bar" hidden></div>
+
+    <div class="table-wrap">
+      <table class="data-table" id="data-table">
+        <thead id="data-thead"></thead>
+        <tbody id="data-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="audit-pagination" id="audit-pagination" hidden>
+      <button type="button" class="btn btn-ghost" id="audit-prev">Previous</button>
+      <span id="audit-page-label"></span>
+      <button type="button" class="btn btn-ghost" id="audit-next">Next</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title">Modal</h2>
+        <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer">
+        <button type="button" class="btn btn-ghost" id="modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="panel-overlay" hidden>
+    <div class="modal modal-wide" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 id="panel-title">Checklist</h2>
+        <button type="button" class="modal-close" id="panel-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="panel-body"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/static/js/main.js" defer></script>
+</body>
+</html>
