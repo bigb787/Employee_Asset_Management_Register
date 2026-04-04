@@ -1,2 +1,43 @@
-# GitHub Actions deploy — populated in Step 11.
-name: Placeholder
+# Secrets: https://github.com/bigb787/Employee_Asset_Management_Register/settings/secrets/actions
+# EC2_HOST, EC2_USER, EC2_SSH_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+name: Deploy Employee Asset Register
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -c "from app.main import app; print('App import OK')"
+      - run: python -c "from app.database import init_db; print('DB OK')"
+      - run: python -c "from app.utils.excel_exporter import export_all_assets; print('Excel OK')"
+      - run: python -c "from app.utils.pdf_generator import generate_gatepass_pdf; print('PDF OK')"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/Employee_Asset_Management_Register
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+            sudo systemctl restart asset-register
+            sudo systemctl restart nginx
+            sleep 3
+            sudo systemctl status asset-register --no-pager
+            echo "Deploy complete at $(date)"
