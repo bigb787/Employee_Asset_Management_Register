@@ -19,5 +19,6 @@ if ($listen) {
 }
 
 Write-Host "Open http://127.0.0.1:$Port/  (Ctrl+C to stop)"
-Write-Host "On the page you should see a gray line: NEW dashboard ... GatePass ... and chip Employee_Assets (not Employee devices)."
+Write-Host "Sanity check: http://127.0.0.1:$Port/api/debug-ui  (should show GatePass in labels)"
+Write-Host "Browser tab title should be: Asset register (7 categories ... GatePass)"
 python -m uvicorn app.main:app --host 0.0.0.0 --port $Port --reload

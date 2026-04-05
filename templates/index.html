@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Asset register</title>
+    <title>{{ html_title }}</title>
     <style>
       :root {
         --bg: #f6f7f9;
@@ -230,7 +230,13 @@
         <div class="titles">
           <h1 id="dashTitle">Asset register</h1>
           <p id="dashSubtitle">All company assets in one place</p>
-          <p id="uiVerify" class="ui-verify">{{ ui_verify }}</p>
+          <p id="uiVerify" class="ui-verify">
+            {{ ui_verify }}
+            <a href="/api/debug-ui" target="_blank" rel="noopener" style="color: #185fa5"
+              >Open /api/debug-ui</a
+            >
+            (must list GatePass; if the page chips look wrong, wrong app on this port).
+          </p>
         </div>
         <div class="header-actions">
           <button type="button" class="btn" id="btnExport" title="Download CSV">

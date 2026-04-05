@@ -67,6 +67,7 @@ async def index(request: Request):
             "categories": cats,
             "categories_bootstrap_json": json.dumps(cats),
             "ui_verify": ui_verify,
+            "html_title": f"Asset register ({len(cats)} categories · GatePass)",
         },
         headers={
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -78,6 +79,24 @@ async def index(request: Request):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/debug-ui")
+def api_debug_ui(response: Response):
+    """Open this URL in the browser to prove which code + folder is serving the app."""
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    return {
+        "app": "Employee_Asset_Management_Register",
+        "category_count": len(CATEGORIES_META),
+        "labels": [c["label"] for c in CATEGORIES_META],
+        "ids": [c["id"] for c in CATEGORIES_META],
+        "project_root": str(ROOT.resolve()),
+        "dashboard_json_py": str(Path(_dashboard_json.__file__).resolve()),
+        "database_exists": DB_PATH.is_file(),
+        "database_path": str(DB_PATH.resolve()) if DB_PATH.is_file() else None,
+        "read_me": "If this JSON shows 7 labels including GatePass but the home page shows Employee devices, port 8000 is a different old program. Use ASSET_REGISTER_PORT=8010 and run.ps1.",
+    }
 
 
 @app.get("/api/dashboard-data")
