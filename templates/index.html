@@ -188,6 +188,163 @@
         font-size: 0.875rem;
         margin-bottom: 16px;
       }
+      .chip--clickable {
+        cursor: pointer;
+      }
+      .chip--clickable:hover {
+        border-color: var(--btn-primary);
+      }
+      .chip-selected {
+        outline: 2px solid var(--btn-primary);
+        outline-offset: 2px;
+      }
+      .btn-sm {
+        height: 34px;
+        padding: 0 12px;
+        font-size: 0.8125rem;
+      }
+      .btn-danger {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+      }
+      .btn-danger:hover {
+        background: #fee2e2;
+      }
+      .ea-panel {
+        margin-bottom: 20px;
+      }
+      .ea-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .ea-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        background: #fafbfc;
+      }
+      .ea-tab {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        font-weight: 600;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .ea-tab:hover {
+        border-color: #c5cad6;
+      }
+      .ea-tab.active {
+        background: var(--btn-primary);
+        color: #fff;
+        border-color: var(--btn-primary);
+      }
+      .ea-toolbar {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .ea-table-scroll {
+        overflow-x: auto;
+        max-width: 100%;
+      }
+      .ea-table-scroll table {
+        min-width: max-content;
+        font-size: 0.75rem;
+      }
+      .ea-table-scroll th,
+      .ea-table-scroll td {
+        padding: 8px 10px;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ea-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        white-space: normal;
+        max-width: none;
+      }
+      .ea-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 24px 16px;
+        overflow-y: auto;
+      }
+      .ea-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+      }
+      .ea-modal-box {
+        position: relative;
+        z-index: 1;
+        width: min(720px, 100%);
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+        padding: 20px;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .ea-modal-box h3 {
+        margin: 0 0 16px;
+        font-size: 1.1rem;
+      }
+      #eaForm {
+        overflow-y: auto;
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 16px;
+        padding-right: 4px;
+      }
+      @media (max-width: 560px) {
+        #eaForm {
+          grid-template-columns: 1fr;
+        }
+      }
+      .ea-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .ea-field input {
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: var(--text);
+        font-family: inherit;
+      }
+      .ea-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+      }
     </style>
   </head>
   <body data-categories-b64="{{ bootstrap_b64 }}">
@@ -228,6 +385,36 @@
             <span class="chip-count">{{ c.count }}</span>
           </div>
           {% endfor %}
+        </div>
+      </div>
+
+      <section id="employeeAssetsPanel" class="panel ea-panel" style="display: none" aria-label="Employee assets detail">
+        <div class="panel-head ea-panel-head">
+          <span>Employee_Assets — Laptop / Desktop / Monitor</span>
+          <button type="button" class="btn btn-sm" id="eaCloseBtn">Close</button>
+        </div>
+        <div class="ea-tabs" id="eaTabs" role="tablist">
+          <button type="button" class="ea-tab active" data-ea-kind="laptops" role="tab">Laptop</button>
+          <button type="button" class="ea-tab" data-ea-kind="desktops" role="tab">Desktop</button>
+          <button type="button" class="ea-tab" data-ea-kind="monitors" role="tab">Monitor</button>
+        </div>
+        <div class="ea-toolbar">
+          <button type="button" class="btn btn-primary btn-sm" id="eaAddBtn">+ Add row</button>
+        </div>
+        <div class="ea-table-scroll" id="eaTableScroll">
+          <p class="empty" style="padding: 20px">Loading…</p>
+        </div>
+      </section>
+
+      <div id="eaModal" class="ea-modal" style="display: none" aria-hidden="true">
+        <div class="ea-modal-backdrop" id="eaModalBackdrop"></div>
+        <div class="ea-modal-box">
+          <h3 id="eaModalTitle">Add row</h3>
+          <form id="eaForm"></form>
+          <div class="ea-modal-actions">
+            <button type="button" class="btn" id="eaModalCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" form="eaForm">Save</button>
+          </div>
         </div>
       </div>
 
@@ -347,7 +534,7 @@
           chipStrip.innerHTML = "";
           categories.forEach(function (c) {
             var el = document.createElement("div");
-            el.className = "chip";
+            el.className = "chip chip--clickable";
             el.setAttribute("data-category-id", c.id);
             el.innerHTML =
               '<span class="chip-dot" style="background:' +
@@ -423,6 +610,212 @@
         });
         document.getElementById("btnMenu").addEventListener("click", function () {
           alert("Menu: add settings / help links here.");
+        });
+
+        /* —— Employee_Assets: Laptop / Desktop / Monitor tables —— */
+        var eaPanel = document.getElementById("employeeAssetsPanel");
+        var eaTableScroll = document.getElementById("eaTableScroll");
+        var eaTabs = document.getElementById("eaTabs");
+        var eaMeta = null;
+        var eaCurrentKind = "laptops";
+        var eaEditingId = null;
+        var eaModalKind = "laptops";
+
+        async function fetchEaMeta() {
+          if (eaMeta) return eaMeta;
+          var r = await fetch("/api/employee-assets/meta?_=" + Date.now(), { cache: "no-store" });
+          if (!r.ok) throw new Error("meta " + r.status);
+          eaMeta = await r.json();
+          return eaMeta;
+        }
+
+        async function loadEaTable(kind) {
+          eaCurrentKind = kind;
+          eaTableScroll.innerHTML = '<p class="empty" style="padding:20px">Loading…</p>';
+          try {
+            await fetchEaMeta();
+            var r = await fetch("/api/employee-assets/" + kind + "?_=" + Date.now(), { cache: "no-store" });
+            if (!r.ok) throw new Error(kind + " " + r.status);
+            var data = await r.json();
+            var cols = eaMeta[kind].columns;
+            var html =
+              "<table><thead><tr><th>ID</th><th>Actions</th>";
+            cols.forEach(function (c) {
+              html += "<th>" + escapeHtml(c.label) + "</th>";
+            });
+            html += "<th>created_at</th><th>updated_at</th></tr></thead><tbody>";
+            (data.rows || []).forEach(function (row) {
+              html += "<tr><td>" + escapeHtml(String(row.id)) + '</td><td class="ea-actions">';
+              html +=
+                '<button type="button" class="btn btn-sm ea-edit" data-id="' +
+                row.id +
+                '">Edit</button>';
+              html +=
+                '<button type="button" class="btn btn-sm btn-danger ea-del" data-id="' +
+                row.id +
+                '">Delete</button></td>';
+              cols.forEach(function (c) {
+                var v = row[c.key];
+                html += "<td>" + escapeHtml(v != null ? String(v) : "—") + "</td>";
+              });
+              html +=
+                "<td>" +
+                escapeHtml(row.created_at || "—") +
+                "</td><td>" +
+                escapeHtml(row.updated_at || "—") +
+                "</td></tr>";
+            });
+            html += "</tbody></table>";
+            if (!data.rows || !data.rows.length) {
+              html = '<p class="empty" style="padding:20px">No rows yet. Click <strong>+ Add row</strong>.</p>';
+            }
+            eaTableScroll.innerHTML = html;
+            eaTableScroll.querySelectorAll(".ea-edit").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                openEaModal(kind, parseInt(btn.getAttribute("data-id"), 10));
+              });
+            });
+            eaTableScroll.querySelectorAll(".ea-del").forEach(function (btn) {
+              btn.addEventListener("click", async function () {
+                var id = parseInt(btn.getAttribute("data-id"), 10);
+                if (!confirm("Delete row " + id + "?")) return;
+                var dr = await fetch("/api/employee-assets/" + kind + "/" + id, { method: "DELETE" });
+                if (!dr.ok) alert("Delete failed: " + dr.status);
+                else loadEaTable(kind);
+              });
+            });
+          } catch (e) {
+            eaTableScroll.innerHTML =
+              '<p class="empty" style="padding:20px;color:#b91c1c">Could not load table. Is the API running?</p>';
+          }
+        }
+
+        function setEaTabActive(kind) {
+          eaTabs.querySelectorAll(".ea-tab").forEach(function (t) {
+            t.classList.toggle("active", t.getAttribute("data-ea-kind") === kind);
+          });
+        }
+
+        async function openEmployeeAssetsPanel(fromChip) {
+          document.querySelectorAll(".chip-selected").forEach(function (c) {
+            c.classList.remove("chip-selected");
+          });
+          if (fromChip) fromChip.classList.add("chip-selected");
+          eaPanel.style.display = "block";
+          try {
+            await fetchEaMeta();
+          } catch (e) {}
+          setEaTabActive(eaCurrentKind);
+          loadEaTable(eaCurrentKind);
+          eaPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function closeEmployeeAssetsPanel() {
+          eaPanel.style.display = "none";
+          document.querySelectorAll(".chip-selected").forEach(function (c) {
+            c.classList.remove("chip-selected");
+          });
+        }
+
+        chipStrip.addEventListener("click", function (ev) {
+          var chip = ev.target.closest(".chip");
+          if (!chip) return;
+          var id = chip.getAttribute("data-category-id");
+          if (id === "employee_assets") openEmployeeAssetsPanel(chip);
+          else alert("Detail tables for this category are not set up yet.");
+        });
+
+        eaTabs.addEventListener("click", function (ev) {
+          var tab = ev.target.closest(".ea-tab");
+          if (!tab) return;
+          var kind = tab.getAttribute("data-ea-kind");
+          if (!kind) return;
+          setEaTabActive(kind);
+          loadEaTable(kind);
+        });
+
+        document.getElementById("eaCloseBtn").addEventListener("click", closeEmployeeAssetsPanel);
+
+        function buildEaFormHtml(kind) {
+          var cols = eaMeta[kind].columns;
+          var html = "";
+          cols.forEach(function (col) {
+            html +=
+              '<label class="ea-field"><span>' +
+              escapeHtml(col.label) +
+              '</span><input type="text" name="' +
+              escapeHtml(col.key) +
+              '" autocomplete="off" /></label>';
+          });
+          return html;
+        }
+
+        async function openEaModal(kind, rowId) {
+          await fetchEaMeta();
+          eaModalKind = kind;
+          eaEditingId = rowId == null ? null : rowId;
+          document.getElementById("eaModalTitle").textContent =
+            rowId == null ? "Add " + kind.replace(/s$/, "") : "Edit row #" + rowId;
+          var form = document.getElementById("eaForm");
+          form.innerHTML = buildEaFormHtml(kind);
+          if (rowId != null) {
+            var r = await fetch("/api/employee-assets/" + kind + "?_=" + Date.now(), { cache: "no-store" });
+            var data = await r.json();
+            var row = (data.rows || []).find(function (x) {
+              return x.id === rowId;
+            });
+            if (row) {
+              form.querySelectorAll("input[name]").forEach(function (inp) {
+                var k = inp.getAttribute("name");
+                if (row[k] != null) inp.value = row[k];
+              });
+            }
+          }
+          document.getElementById("eaModal").style.display = "flex";
+          document.getElementById("eaModal").setAttribute("aria-hidden", "false");
+        }
+
+        function closeEaModal() {
+          document.getElementById("eaModal").style.display = "none";
+          document.getElementById("eaModal").setAttribute("aria-hidden", "true");
+          eaEditingId = null;
+        }
+
+        document.getElementById("eaAddBtn").addEventListener("click", function () {
+          openEaModal(eaCurrentKind, null);
+        });
+
+        document.getElementById("eaModalCancel").addEventListener("click", closeEaModal);
+        document.getElementById("eaModalBackdrop").addEventListener("click", closeEaModal);
+
+        document.getElementById("eaForm").addEventListener("submit", async function (ev) {
+          ev.preventDefault();
+          var form = ev.target;
+          var fd = new FormData(form);
+          var body = {};
+          fd.forEach(function (v, k) {
+            body[k] = v;
+          });
+          var kind = eaModalKind;
+          var url, method;
+          if (eaEditingId == null) {
+            url = "/api/employee-assets/" + kind;
+            method = "POST";
+          } else {
+            url = "/api/employee-assets/" + kind + "/" + eaEditingId;
+            method = "PUT";
+          }
+          var r = await fetch(url, {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (!r.ok) {
+            alert("Save failed: " + r.status);
+            return;
+          }
+          closeEaModal();
+          loadEaTable(kind);
         });
 
         load();

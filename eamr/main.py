@@ -15,12 +15,14 @@ from starlette.requests import Request
 from eamr import dashboard_json as _dashboard_json
 from eamr.dashboard_json import CATEGORIES_META, build_payload, verify_categories_meta_or_die
 from eamr.database import DB_PATH, get_connection, init_db
+from eamr.employee_assets_api import router as employee_assets_router
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "static"
 _LOG = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="Employee Asset Management Register")
+app.include_router(employee_assets_router, prefix="/api/employee-assets")
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
 
 
