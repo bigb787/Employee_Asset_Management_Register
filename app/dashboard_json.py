@@ -13,6 +13,7 @@ CATEGORIES_META = [
     {"id": "employee_assets", "label": "Employee_Assets", "color": "#185FA5"},
     {"id": "internal_assets", "label": "Internal Assets", "color": "#4B2E83"},
     {"id": "external_assets", "label": "External Assets", "color": "#1E3A5F"},
+    {"id": "cloud_assets", "label": "Cloud_Assets", "color": "#0F766E"},
     {"id": "admin_assets", "label": "Admin_Assets", "color": "#8B3A3A"},
 ]
 
@@ -23,14 +24,15 @@ DEMO_ROWS = [
     ("employee_assets", "Phone — Sales lead"),
     ("internal_assets", "Core switch — DC1"),
     ("internal_assets", "Firewall — edge"),
-    ("external_assets", "AWS account — prod"),
+    ("cloud_assets", "AWS account — prod"),
+    ("cloud_assets", "Azure subscription — dev"),
     ("internal_assets", "Service desk portal"),
     ("admin_assets", "Jump host — admin"),
 ]
 
 
 def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
-    """One-time: 5 legacy categories -> 4 new ones (SQLite CHECK cannot update in place)."""
+    """One-time: 5 legacy categories -> current CHECK set (SQLite CHECK cannot update in place)."""
     row = conn.execute(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name='assets'"
     ).fetchone()
@@ -47,7 +49,8 @@ def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       category TEXT NOT NULL CHECK (category IN (
-        'employee_assets', 'internal_assets', 'external_assets', 'admin_assets'
+        'employee_assets', 'internal_assets', 'external_assets',
+        'cloud_assets', 'admin_assets'
       )),
       serial_number TEXT,
       notes TEXT,
@@ -58,7 +61,7 @@ def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
       CASE category
         WHEN 'employee_devices' THEN 'employee_assets'
         WHEN 'network' THEN 'internal_assets'
-        WHEN 'cloud_assets' THEN 'external_assets'
+        WHEN 'cloud_assets' THEN 'cloud_assets'
         WHEN 'infodesk_apps' THEN 'internal_assets'
         WHEN 'third_party' THEN 'admin_assets'
         ELSE 'admin_assets'
@@ -73,10 +76,48 @@ def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_four_category_table_add_cloud(conn: sqlite3.Connection) -> None:
+    """SQLite CHECK cannot alter in place — widen 4-category table to include cloud_assets."""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='assets'"
+    ).fetchone()
+    if not row or not row[0]:
+        return
+    ddl = row[0]
+    if "employee_devices" in ddl:
+        return
+    if "cloud_assets" in ddl:
+        return
+    if "employee_assets" not in ddl:
+        return
+    conn.executescript(
+        """
+    CREATE TABLE assets__new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL CHECK (category IN (
+        'employee_assets', 'internal_assets', 'external_assets',
+        'cloud_assets', 'admin_assets'
+      )),
+      serial_number TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    INSERT INTO assets__new (id, name, category, serial_number, notes, created_at)
+    SELECT id, name, category, serial_number, notes, created_at FROM assets;
+    DROP TABLE assets;
+    ALTER TABLE assets__new RENAME TO assets;
+    CREATE INDEX IF NOT EXISTS idx_assets_category ON assets (category);
+    """
+    )
+    conn.commit()
+
+
 def ensure_schema(conn: sqlite3.Connection) -> None:
     if not SCHEMA_PATH.is_file():
         raise FileNotFoundError(f"Missing {SCHEMA_PATH}")
     migrate_legacy_assets_table(conn)
+    migrate_four_category_table_add_cloud(conn)
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
@@ -96,6 +137,10 @@ def seed_if_empty(conn: sqlite3.Connection) -> None:
     while len(names_by_cat["external_assets"]) < 3:
         names_by_cat["external_assets"].append(
             f"External asset — {len(names_by_cat['external_assets']) + 1}"
+        )
+    while len(names_by_cat["cloud_assets"]) < 3:
+        names_by_cat["cloud_assets"].append(
+            f"Cloud asset — {len(names_by_cat['cloud_assets']) + 1}"
         )
     while len(names_by_cat["admin_assets"]) < 4:
         names_by_cat["admin_assets"].append(

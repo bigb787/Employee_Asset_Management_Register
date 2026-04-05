@@ -1,4 +1,4 @@
--- Asset register — four category headers: Employee_Assets, Internal / External / Admin Assets
+-- Asset register — five category headers: Employee_Assets, Internal / External / Cloud / Admin Assets
 CREATE TABLE IF NOT EXISTS assets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS assets (
     'employee_assets',
     'internal_assets',
     'external_assets',
+    'cloud_assets',
     'admin_assets'
   )),
   serial_number TEXT,

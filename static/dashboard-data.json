@@ -22,6 +22,12 @@
       "count": 3
     },
     {
+      "id": "cloud_assets",
+      "label": "Cloud_Assets",
+      "color": "#0F766E",
+      "count": 0
+    },
+    {
       "id": "admin_assets",
       "label": "Admin_Assets",
       "color": "#8B3A3A",
