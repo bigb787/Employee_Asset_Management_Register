@@ -4,10 +4,22 @@
   "generated_by": "eamr.dashboard_json",
   "categories": [
     {
-      "id": "employee_devices",
-      "label": "Employee_Devices",
+      "id": "laptop",
+      "label": "Laptop",
       "color": "#185FA5",
       "count": 14
+    },
+    {
+      "id": "desktop",
+      "label": "Desktop",
+      "color": "#1D4ED8",
+      "count": 0
+    },
+    {
+      "id": "monitor",
+      "label": "Monitors",
+      "color": "#2563EB",
+      "count": 0
     },
     {
       "id": "networking",
@@ -34,8 +46,26 @@
       "count": 0
     },
     {
-      "id": "admin_devices",
-      "label": "Admin Devices",
+      "id": "ups",
+      "label": "UPS",
+      "color": "#9F1239",
+      "count": 0
+    },
+    {
+      "id": "mobile_phones",
+      "label": "Mobile Phones",
+      "color": "#BE123C",
+      "count": 0
+    },
+    {
+      "id": "scanner_and_others",
+      "label": "Scanner and Others",
+      "color": "#A21CAF",
+      "count": 0
+    },
+    {
+      "id": "admin",
+      "label": "Admin",
       "color": "#8B3A3A",
       "count": 16
     },
@@ -56,210 +86,210 @@
     {
       "id": 30,
       "name": "Vendor SaaS \u2014 5",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 29,
       "name": "Vendor SaaS \u2014 4",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 28,
       "name": "Vendor SaaS \u2014 3",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 27,
       "name": "Vendor SaaS \u2014 2",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 26,
       "name": "O365 tenant",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 25,
       "name": "Infodesk app \u2014 4",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 24,
       "name": "Infodesk app \u2014 3",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 23,
       "name": "Infodesk app \u2014 2",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 22,
       "name": "Service desk portal",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 21,
       "name": "S3 bucket \u2014 set 3",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 20,
       "name": "S3 bucket \u2014 set 2",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 19,
       "name": "AWS account \u2014 prod",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 18,
       "name": "Switch \u2014 rack 4",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 17,
       "name": "Switch \u2014 rack 3",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 16,
       "name": "Firewall \u2014 edge",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 15,
       "name": "Core switch \u2014 DC1",
-      "category": "admin_devices",
+      "category": "admin",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 14,
       "name": "Laptop \u2014 auto 10",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 13,
       "name": "Laptop \u2014 auto 9",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 12,
       "name": "Laptop \u2014 auto 8",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 11,
       "name": "Laptop \u2014 auto 7",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 10,
       "name": "Laptop \u2014 auto 6",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 9,
       "name": "Laptop \u2014 auto 5",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 8,
       "name": "Laptop \u2014 auto 4",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 7,
       "name": "Laptop \u2014 auto 3",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 6,
       "name": "Laptop \u2014 auto 2",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 5,
       "name": "Laptop \u2014 auto 1",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 4,
       "name": "Phone \u2014 Sales lead",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 3,
       "name": "Monitor \u2014 Desk A",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 2,
       "name": "Laptop \u2014 HR-02",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 1,
       "name": "Laptop \u2014 Finance-01",
-      "category": "employee_devices",
+      "category": "laptop",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     }

@@ -8,14 +8,19 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 SCHEMA_PATH = DATA_DIR / "schema.sql"
 
-# Chip headers (labels shown in the UI)
+# Chip headers — one chip = one register table (see eamr/register_schema.py)
 CATEGORIES_META = [
-    {"id": "employee_devices", "label": "Employee_Devices", "color": "#185FA5"},
+    {"id": "laptop", "label": "Laptop", "color": "#185FA5"},
+    {"id": "desktop", "label": "Desktop", "color": "#1D4ED8"},
+    {"id": "monitor", "label": "Monitors", "color": "#2563EB"},
     {"id": "networking", "label": "Networking", "color": "#4B2E83"},
     {"id": "cloud_asset_register", "label": "Cloud Asset Register", "color": "#0F766E"},
     {"id": "infodesk_applications", "label": "Infodesk Applications", "color": "#0369A1"},
     {"id": "third_party_softwares", "label": "Third Party Softwares", "color": "#1E3A5F"},
-    {"id": "admin_devices", "label": "Admin Devices", "color": "#8B3A3A"},
+    {"id": "ups", "label": "UPS", "color": "#9F1239"},
+    {"id": "mobile_phones", "label": "Mobile Phones", "color": "#BE123C"},
+    {"id": "scanner_and_others", "label": "Scanner and Others", "color": "#A21CAF"},
+    {"id": "admin", "label": "Admin", "color": "#8B3A3A"},
     {"id": "gatepass", "label": "GatePass", "color": "#B45309"},
     {"id": "infodesk_leavers", "label": "InfoDesk_Leavers", "color": "#7C3AED"},
 ]
@@ -31,6 +36,19 @@ _LEGACY_CHIP_IDS = frozenset(
         "external_assets",
         "cloud_assets",
         "admin_assets",
+        "employee_devices",
+        "admin_devices",
+        "cloud_register",
+        "third_party_software",
+        "emp_laptop",
+        "emp_desktop",
+        "emp_monitor",
+        "emp_accessory",
+        "admin_ups",
+        "admin_mobile_phone",
+        "admin_scanners_printers",
+        "admin_camera",
+        "admin_dvr",
     }
 )
 
@@ -59,31 +77,58 @@ def _sql_category_check_line() -> str:
 def _category_map_case_sql() -> str:
     """Map old category values to current CATEGORIES_META ids."""
     return """CASE category
-        WHEN 'employee_assets' THEN 'employee_devices'
-        WHEN 'employee_devices' THEN 'employee_devices'
+        WHEN 'employee_assets' THEN 'laptop'
+        WHEN 'employee_devices' THEN 'laptop'
+        WHEN 'emp_laptop' THEN 'laptop'
+        WHEN 'laptop' THEN 'laptop'
+        WHEN 'desktop' THEN 'desktop'
+        WHEN 'emp_desktop' THEN 'desktop'
+        WHEN 'monitor' THEN 'monitor'
+        WHEN 'emp_monitor' THEN 'monitor'
         WHEN 'internal_assets' THEN 'networking'
         WHEN 'network' THEN 'networking'
+        WHEN 'networking' THEN 'networking'
         WHEN 'external_assets' THEN 'third_party_softwares'
         WHEN 'cloud_assets' THEN 'cloud_asset_register'
-        WHEN 'admin_assets' THEN 'admin_devices'
+        WHEN 'cloud_register' THEN 'cloud_asset_register'
+        WHEN 'cloud_asset_register' THEN 'cloud_asset_register'
+        WHEN 'admin_assets' THEN 'admin'
+        WHEN 'admin_devices' THEN 'admin'
+        WHEN 'admin_ups' THEN 'ups'
+        WHEN 'admin_mobile_phone' THEN 'mobile_phones'
+        WHEN 'admin_scanners_printers' THEN 'scanner_and_others'
+        WHEN 'admin_camera' THEN 'admin'
+        WHEN 'admin_dvr' THEN 'admin'
+        WHEN 'ups' THEN 'ups'
+        WHEN 'mobile_phones' THEN 'mobile_phones'
+        WHEN 'scanner_and_others' THEN 'scanner_and_others'
+        WHEN 'admin' THEN 'admin'
         WHEN 'third_party' THEN 'third_party_softwares'
+        WHEN 'third_party_software' THEN 'third_party_softwares'
+        WHEN 'third_party_softwares' THEN 'third_party_softwares'
         WHEN 'infodesk_apps' THEN 'infodesk_applications'
-        ELSE category
+        WHEN 'infodesk_applications' THEN 'infodesk_applications'
+        WHEN 'gatepass' THEN 'gatepass'
+        WHEN 'infodesk_leavers' THEN 'infodesk_leavers'
+        ELSE 'laptop'
       END"""
 
 
 DEMO_ROWS = [
-    ("employee_devices", "Laptop — Finance-01"),
-    ("employee_devices", "Laptop — HR-02"),
-    ("employee_devices", "Monitor — Desk A"),
-    ("employee_devices", "Accessory — Dock kit"),
+    ("laptop", "Laptop — Finance-01"),
+    ("laptop", "Laptop — HR-02"),
+    ("desktop", "Desktop — Ops-01"),
+    ("monitor", "Monitor — Desk A"),
     ("networking", "Core switch — DC1"),
     ("networking", "Firewall — edge"),
     ("cloud_asset_register", "AWS account — prod"),
     ("cloud_asset_register", "Azure subscription — dev"),
     ("infodesk_applications", "Service desk portal"),
     ("third_party_softwares", "Vendor SaaS — billing"),
-    ("admin_devices", "Jump host — admin"),
+    ("ups", "UPS — server room"),
+    ("mobile_phones", "Mobile — field rep"),
+    ("scanner_and_others", "Scanner — HR"),
+    ("admin", "DVR — lobby"),
     ("gatepass", "Visitor gate pass — lobby kiosk"),
     ("gatepass", "Contractor badge printer"),
     ("infodesk_leavers", "Leaver checklist — HR workflow"),
@@ -189,36 +234,24 @@ def seed_if_empty(conn: sqlite3.Connection) -> None:
     names_by_cat: dict[str, list[str]] = {c["id"]: [] for c in CATEGORIES_META}
     for cat, name in DEMO_ROWS:
         names_by_cat[cat].append(name)
-    for i in range(max(0, 12 - len(names_by_cat["employee_devices"]))):
-        names_by_cat["employee_devices"].append(f"Laptop — auto {i + 1}")
-    while len(names_by_cat["networking"]) < 4:
-        names_by_cat["networking"].append(
-            f"Network asset — {len(names_by_cat['networking']) + 1}"
-        )
-    while len(names_by_cat["cloud_asset_register"]) < 3:
-        names_by_cat["cloud_asset_register"].append(
-            f"Cloud row — {len(names_by_cat['cloud_asset_register']) + 1}"
-        )
-    while len(names_by_cat["infodesk_applications"]) < 2:
-        names_by_cat["infodesk_applications"].append(
-            f"Infodesk app — {len(names_by_cat['infodesk_applications']) + 1}"
-        )
-    while len(names_by_cat["third_party_softwares"]) < 3:
-        names_by_cat["third_party_softwares"].append(
-            f"Third party — {len(names_by_cat['third_party_softwares']) + 1}"
-        )
-    while len(names_by_cat["admin_devices"]) < 4:
-        names_by_cat["admin_devices"].append(
-            f"Admin device — {len(names_by_cat['admin_devices']) + 1}"
-        )
-    while len(names_by_cat["gatepass"]) < 2:
-        names_by_cat["gatepass"].append(
-            f"Gate pass — {len(names_by_cat['gatepass']) + 1}"
-        )
-    while len(names_by_cat["infodesk_leavers"]) < 2:
-        names_by_cat["infodesk_leavers"].append(
-            f"InfoDesk leavers — {len(names_by_cat['infodesk_leavers']) + 1}"
-        )
+    _min = {
+        "laptop": 10,
+        "desktop": 2,
+        "monitor": 2,
+        "networking": 4,
+        "cloud_asset_register": 3,
+        "infodesk_applications": 2,
+        "third_party_softwares": 3,
+        "ups": 2,
+        "mobile_phones": 2,
+        "scanner_and_others": 2,
+        "admin": 2,
+        "gatepass": 2,
+        "infodesk_leavers": 2,
+    }
+    for cid, min_n in _min.items():
+        while len(names_by_cat[cid]) < min_n:
+            names_by_cat[cid].append(f"{cid} — auto {len(names_by_cat[cid]) + 1}")
 
     for cat, names in names_by_cat.items():
         for name in names:

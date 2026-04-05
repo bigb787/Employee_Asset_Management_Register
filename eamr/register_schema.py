@@ -1,7 +1,5 @@
-"""Detail register: column defs, SQLite table names, and panel/tab layout for dashboard chips."""
+"""Detail register: one chip = one table; column defs and panel layout for the dashboard."""
 from __future__ import annotations
-
-# --- Employee_Devices (Laptop / Desktop / Monitor / Accessories) ---
 
 LAPTOP_COLUMNS: list[tuple[str, str]] = [
     ("asset_type", "Asset type"),
@@ -70,21 +68,6 @@ MONITOR_COLUMNS: list[tuple[str, str]] = [
     ("install_date", "INSTALL DATE"),
     ("date_added_updated", "Date Added/Updated"),
     ("supt_vendor", "Supt Vendor"),
-    ("contains_pii", "Contains PII (Yes/No)"),
-]
-
-ACCESSORY_COLUMNS: list[tuple[str, str]] = [
-    ("asset_type", "Asset type"),
-    ("asset_manufacturer", "Asset Manufacturer"),
-    ("service_tag", "Service Tag"),
-    ("model", "Model"),
-    ("pn", "P/N"),
-    ("asset_owner", "Asset Owner"),
-    ("assigned_to", "Assigned To"),
-    ("dept", "Dept"),
-    ("location", "Location"),
-    ("warranty", "Warranty"),
-    ("date_added_updated", "Date Added/Updated"),
     ("contains_pii", "Contains PII (Yes/No)"),
 ]
 
@@ -169,7 +152,7 @@ ADMIN_MOBILE_COLUMNS: list[tuple[str, str]] = [
     ("date_added_updated", "Date Added/Updated"),
 ]
 
-ADMIN_SCANNERS_COLUMNS: list[tuple[str, str]] = [
+SCANNER_AND_OTHERS_COLUMNS: list[tuple[str, str]] = [
     ("asset_type", "Asset type"),
     ("device_id", "Device Id"),
     ("location", "Location"),
@@ -185,7 +168,7 @@ ADMIN_SCANNERS_COLUMNS: list[tuple[str, str]] = [
     ("date_added_updated", "Date Added/Updated"),
 ]
 
-ADMIN_CAMERA_DVR_COLUMNS: list[tuple[str, str]] = [
+ADMIN_COLUMNS: list[tuple[str, str]] = [
     ("asset_type", "Asset type"),
     ("location", "Location"),
     ("invoice_no", "Invoice No"),
@@ -198,65 +181,43 @@ ADMIN_CAMERA_DVR_COLUMNS: list[tuple[str, str]] = [
     ("date_added_updated", "Date Added/Updated"),
 ]
 
+# kind id == chip category_id for each row (API path /api/register-tables/{kind})
 KIND_SPECS: dict[str, dict] = {
-    "emp_laptop": {"table": "ea_laptops", "columns": LAPTOP_COLUMNS},
-    "emp_desktop": {"table": "ea_desktops", "columns": DESKTOP_COLUMNS},
-    "emp_monitor": {"table": "ea_monitors", "columns": MONITOR_COLUMNS},
-    "emp_accessory": {"table": "reg_emp_accessory", "columns": ACCESSORY_COLUMNS},
+    "laptop": {"table": "ea_laptops", "columns": LAPTOP_COLUMNS},
+    "desktop": {"table": "ea_desktops", "columns": DESKTOP_COLUMNS},
+    "monitor": {"table": "ea_monitors", "columns": MONITOR_COLUMNS},
     "networking": {"table": "reg_networking", "columns": NETWORKING_COLUMNS},
-    "cloud_register": {"table": "reg_cloud_register", "columns": CLOUD_REGISTER_COLUMNS},
-    "infodesk_apps": {"table": "reg_infodesk_apps", "columns": INFODESK_APPS_COLUMNS},
-    "third_party_software": {"table": "reg_third_party_software", "columns": THIRD_PARTY_COLUMNS},
-    "admin_ups": {"table": "reg_admin_ups", "columns": ADMIN_UPS_COLUMNS},
-    "admin_mobile_phone": {"table": "reg_admin_mobile_phone", "columns": ADMIN_MOBILE_COLUMNS},
-    "admin_scanners_printers": {"table": "reg_admin_scanners", "columns": ADMIN_SCANNERS_COLUMNS},
-    "admin_camera": {"table": "reg_admin_camera", "columns": ADMIN_CAMERA_DVR_COLUMNS},
-    "admin_dvr": {"table": "reg_admin_dvr", "columns": ADMIN_CAMERA_DVR_COLUMNS},
+    "cloud_asset_register": {"table": "reg_cloud_register", "columns": CLOUD_REGISTER_COLUMNS},
+    "infodesk_applications": {"table": "reg_infodesk_apps", "columns": INFODESK_APPS_COLUMNS},
+    "third_party_softwares": {"table": "reg_third_party_software", "columns": THIRD_PARTY_COLUMNS},
+    "ups": {"table": "reg_admin_ups", "columns": ADMIN_UPS_COLUMNS},
+    "mobile_phones": {"table": "reg_admin_mobile_phone", "columns": ADMIN_MOBILE_COLUMNS},
+    "scanner_and_others": {"table": "reg_admin_scanners", "columns": SCANNER_AND_OTHERS_COLUMNS},
+    "admin": {"table": "reg_admin", "columns": ADMIN_COLUMNS},
 }
 
-# Chip category id -> panel title + tabs (kind must exist in KIND_SPECS)
+
+def _panel(category_id: str, title: str) -> dict:
+    return {
+        "category_id": category_id,
+        "title": title,
+        "tabs": [{"kind": category_id, "label": title}],
+    }
+
+
+# One top-level chip each; opening the chip shows this table (no sub-headers).
 REGISTER_PANELS: list[dict] = [
-    {
-        "category_id": "employee_devices",
-        "title": "Employee_Devices",
-        "tabs": [
-            {"kind": "emp_laptop", "label": "Laptop"},
-            {"kind": "emp_desktop", "label": "Desktop"},
-            {"kind": "emp_monitor", "label": "Monitors"},
-            {"kind": "emp_accessory", "label": "Accessories"},
-        ],
-    },
-    {
-        "category_id": "networking",
-        "title": "Networking",
-        "tabs": [{"kind": "networking", "label": "Networking"}],
-    },
-    {
-        "category_id": "cloud_asset_register",
-        "title": "Cloud Asset Register",
-        "tabs": [{"kind": "cloud_register", "label": "Cloud Asset Register"}],
-    },
-    {
-        "category_id": "infodesk_applications",
-        "title": "Infodesk Applications",
-        "tabs": [{"kind": "infodesk_apps", "label": "Infodesk Applications"}],
-    },
-    {
-        "category_id": "third_party_softwares",
-        "title": "Third Party Softwares",
-        "tabs": [{"kind": "third_party_software", "label": "Third Party Softwares"}],
-    },
-    {
-        "category_id": "admin_devices",
-        "title": "Admin Devices",
-        "tabs": [
-            {"kind": "admin_ups", "label": "UPS"},
-            {"kind": "admin_mobile_phone", "label": "Mobile Phones"},
-            {"kind": "admin_scanners_printers", "label": "Scanners and Printers"},
-            {"kind": "admin_camera", "label": "Cameras"},
-            {"kind": "admin_dvr", "label": "DVR"},
-        ],
-    },
+    _panel("laptop", "Laptop"),
+    _panel("desktop", "Desktop"),
+    _panel("monitor", "Monitors"),
+    _panel("networking", "Networking"),
+    _panel("cloud_asset_register", "Cloud Asset Register"),
+    _panel("infodesk_applications", "Infodesk Applications"),
+    _panel("third_party_softwares", "Third Party Softwares"),
+    _panel("ups", "UPS"),
+    _panel("mobile_phones", "Mobile Phones"),
+    _panel("scanner_and_others", "Scanner and Others"),
+    _panel("admin", "Admin"),
 ]
 
 DETAIL_CATEGORY_IDS = frozenset(p["category_id"] for p in REGISTER_PANELS)

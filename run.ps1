@@ -20,5 +20,5 @@ if ($listen) {
 
 Write-Host "Open http://127.0.0.1:$Port/  (Ctrl+C to stop)"
 Write-Host "Sanity check: http://127.0.0.1:$Port/api/debug-ui  (should show GatePass in labels)"
-Write-Host "Browser tab title should list 8 categories (incl. GatePass, InfoDesk_Leavers)."
+Write-Host "Browser tab title should list 13 categories (Laptop … InfoDesk_Leavers)."
 python -m uvicorn eamr.main:app --host 0.0.0.0 --port $Port --reload

@@ -232,6 +232,9 @@
         border-bottom: 1px solid var(--border);
         background: #fafbfc;
       }
+      .ea-tabs.ea-tabs--hidden {
+        display: none;
+      }
       .ea-tab {
         padding: 8px 16px;
         border-radius: 8px;
@@ -381,7 +384,7 @@
       </header>
 
       <div class="chip-strip-wrap">
-        <div class="chip-section-label" id="chipSectionLabel">Categories (8)</div>
+        <div class="chip-section-label" id="chipSectionLabel">Categories (13)</div>
         <div class="chip-strip" id="chipStrip" aria-label="Categories">
           {% for c in categories %}
           <div class="chip chip--clickable" data-category-id="{{ c.id }}">
@@ -450,12 +453,17 @@
 
         function categoryLabel(id) {
           var map = {
-            employee_devices: "Employee_Devices",
+            laptop: "Laptop",
+            desktop: "Desktop",
+            monitor: "Monitors",
             networking: "Networking",
             cloud_asset_register: "Cloud Asset Register",
             infodesk_applications: "Infodesk Applications",
             third_party_softwares: "Third Party Softwares",
-            admin_devices: "Admin Devices",
+            ups: "UPS",
+            mobile_phones: "Mobile Phones",
+            scanner_and_others: "Scanner and Others",
+            admin: "Admin",
             gatepass: "GatePass",
             infodesk_leavers: "InfoDesk_Leavers",
           };
@@ -479,12 +487,17 @@
         } catch (e1) {}
 
         var CHIP_DEFS_FALLBACK = [
-          { id: "employee_devices", color: "#185FA5" },
+          { id: "laptop", color: "#185FA5" },
+          { id: "desktop", color: "#1D4ED8" },
+          { id: "monitor", color: "#2563EB" },
           { id: "networking", color: "#4B2E83" },
           { id: "cloud_asset_register", color: "#0F766E" },
           { id: "infodesk_applications", color: "#0369A1" },
           { id: "third_party_softwares", color: "#1E3A5F" },
-          { id: "admin_devices", color: "#8B3A3A" },
+          { id: "ups", color: "#9F1239" },
+          { id: "mobile_phones", color: "#BE123C" },
+          { id: "scanner_and_others", color: "#A21CAF" },
+          { id: "admin", color: "#8B3A3A" },
           { id: "gatepass", color: "#B45309" },
           { id: "infodesk_leavers", color: "#7C3AED" },
         ];
@@ -496,7 +509,7 @@
             chipDefsOrdered = JSON.parse(defEl.textContent.trim());
           }
         } catch (e2) {}
-        if (!chipDefsOrdered || chipDefsOrdered.length < 8) {
+        if (!chipDefsOrdered || chipDefsOrdered.length < 13) {
           chipDefsOrdered = CHIP_DEFS_FALLBACK;
         }
 
@@ -605,9 +618,9 @@
         var regTabs = document.getElementById("registerTabs");
         var regKindsMeta = null;
         var regPanels = [];
-        var regCurrentKind = "emp_laptop";
+        var regCurrentKind = "laptop";
         var regEditingId = null;
-        var regModalKind = "emp_laptop";
+        var regModalKind = "laptop";
 
         function readRegisterBootstrap() {
           var o = window.__REGISTER_BOOTSTRAP__;
@@ -630,7 +643,8 @@
 
         function renderRegisterTabs(panel) {
           regTabs.innerHTML = "";
-          panel.tabs.forEach(function (tab, idx) {
+          regTabs.classList.toggle("ea-tabs--hidden", !panel.tabs || panel.tabs.length < 2);
+          (panel.tabs || []).forEach(function (tab, idx) {
             var b = document.createElement("button");
             b.type = "button";
             b.className = "ea-tab" + (idx === 0 ? " active" : "");
