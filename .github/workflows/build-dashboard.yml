@@ -1,0 +1,45 @@
+# Regenerates static/dashboard-data.json from data/assets.db (SQLite in repo).
+# Triggers: changes under data/, the script, schema, or manual run.
+name: Build dashboard data
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "scripts/build_dashboard_data.py"
+      - "app/dashboard_json.py"
+      - "data/schema.sql"
+      - ".github/workflows/build-dashboard.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install app deps (for imports)
+        run: pip install -r requirements.txt
+
+      - name: Build static/dashboard-data.json from SQLite
+        run: python scripts/build_dashboard_data.py
+
+      - name: Commit JSON (and DB if new) if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add static/dashboard-data.json data/assets.db
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: refresh dashboard-data.json from SQLite"
+            git push
+          fi

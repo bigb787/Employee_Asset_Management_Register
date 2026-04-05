@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asset register</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --card: #fff;
+        --text: #1a1d26;
+        --muted: #5c6473;
+        --border: #e8eaef;
+        --btn-primary: #185fa5;
+        --btn-primary-hover: #144a84;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 28px 24px 48px;
+      }
+      .header-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .titles h1 {
+        margin: 0 0 6px;
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .titles p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 40px;
+        padding: 0 16px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: inherit;
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+      }
+      .btn:hover {
+        filter: brightness(0.98);
+      }
+      .btn-primary {
+        background: var(--btn-primary);
+        color: #fff;
+        border-color: var(--btn-primary);
+      }
+      .btn-primary:hover {
+        background: var(--btn-primary-hover);
+        border-color: var(--btn-primary-hover);
+      }
+      .btn-icon {
+        width: 40px;
+        padding: 0;
+        justify-content: center;
+        font-size: 1.25rem;
+        line-height: 1;
+        color: var(--muted);
+      }
+      .chip-strip-wrap {
+        position: relative;
+        margin-bottom: 24px;
+      }
+      .chip-strip {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 12px 4px 14px;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        border-bottom: 1px solid var(--border);
+      }
+      .chip-strip::-webkit-scrollbar {
+        height: 6px;
+      }
+      .chip-strip::-webkit-scrollbar-thumb {
+        background: #c5cad6;
+        border-radius: 3px;
+      }
+      .chip {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        background: var(--card);
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .chip-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .chip-count {
+        font-weight: 700;
+        color: var(--text);
+        margin-left: 4px;
+      }
+      .chip-nav {
+        position: absolute;
+        right: 0;
+        top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .chip-nav button {
+        width: 28px;
+        height: 24px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
+        color: var(--muted);
+      }
+      .chip-nav button:hover {
+        background: #f0f2f5;
+      }
+      @media (max-width: 640px) {
+        .chip-nav {
+          display: none;
+        }
+      }
+      .panel {
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .panel-head {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+        background: #fafbfc;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+      .err {
+        padding: 16px;
+        background: #fff4f4;
+        color: #a40000;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div id="err" class="err" style="display: none"></div>
+
+      <header class="header-row">
+        <div class="titles">
+          <h1 id="dashTitle">Asset register</h1>
+          <p id="dashSubtitle">All company assets in one place</p>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn" id="btnExport" title="Download CSV">
+            <span aria-hidden="true">↓</span> Export all
+          </button>
+          <button type="button" class="btn btn-primary" id="btnAdd">+ Add asset</button>
+          <button type="button" class="btn btn-icon" id="btnMenu" aria-label="More options">
+            ⋮
+          </button>
+        </div>
+      </header>
+
+      <div class="chip-strip-wrap">
+        <div class="chip-strip" id="chipStrip" aria-label="Categories"></div>
+        <div class="chip-nav" aria-hidden="true">
+          <button type="button" id="chipScrollL" title="Scroll left">◀</button>
+          <button type="button" id="chipScrollR" title="Scroll right">▶</button>
+        </div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">Recent assets</div>
+        <div id="tableWrap">
+          <div class="empty" id="emptyState">Loading…</div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        var chipStrip = document.getElementById("chipStrip");
+        var tableWrap = document.getElementById("tableWrap");
+        var emptyState = document.getElementById("emptyState");
+        var errEl = document.getElementById("err");
+
+        function showErr(msg) {
+          errEl.textContent = msg;
+          errEl.style.display = "block";
+        }
+
+        function categoryLabel(id) {
+          var map = {
+            employee_devices: "Employee devices",
+            network: "Network",
+            cloud_assets: "Cloud assets",
+            infodesk_apps: "Infodesk apps",
+            third_party: "3rd party software",
+          };
+          return map[id] || id;
+        }
+
+        function render(data) {
+          if (data.title) document.getElementById("dashTitle").textContent = data.title;
+          if (data.subtitle)
+            document.getElementById("dashSubtitle").textContent = data.subtitle;
+
+          chipStrip.innerHTML = "";
+          (data.categories || []).forEach(function (c) {
+            var el = document.createElement("div");
+            el.className = "chip";
+            el.innerHTML =
+              '<span class="chip-dot" style="background:' +
+              (c.color || "#888") +
+              '"></span><span>' +
+              (c.label || c.id) +
+              '</span><span class="chip-count">' +
+              (c.count != null ? c.count : 0) +
+              "</span>";
+            chipStrip.appendChild(el);
+          });
+
+          var items = data.items || [];
+          if (items.length === 0) {
+            tableWrap.innerHTML =
+              '<div class="empty">No assets yet. Use GitHub Actions + SQLite or add rows in <code>data/assets.db</code>.</div>';
+            return;
+          }
+
+          var html =
+            "<table><thead><tr><th>Name</th><th>Category</th><th>Serial</th><th>Created</th></tr></thead><tbody>";
+          items.forEach(function (r) {
+            html +=
+              "<tr><td>" +
+              escapeHtml(r.name) +
+              "</td><td>" +
+              escapeHtml(categoryLabel(r.category)) +
+              "</td><td>" +
+              escapeHtml(r.serial_number || "—") +
+              "</td><td>" +
+              escapeHtml(r.created_at || "—") +
+              "</td></tr>";
+          });
+          html += "</tbody></table>";
+          tableWrap.innerHTML = html;
+        }
+
+        function escapeHtml(s) {
+          if (!s) return "";
+          var d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+
+        async function load() {
+          try {
+            var url = "/api/dashboard-data";
+            var res = await fetch(url, { credentials: "same-origin" });
+            if (!res.ok) throw new Error("API " + res.status);
+            render(await res.json());
+          } catch (e) {
+            try {
+              var r2 = await fetch("/static/dashboard-data.json", { cache: "no-store" });
+              if (!r2.ok) throw new Error("static JSON missing");
+              render(await r2.json());
+            } catch (e2) {
+              showErr("Could not load dashboard data. Run: python scripts/build_dashboard_data.py");
+              tableWrap.innerHTML = "";
+            }
+          }
+        }
+
+        document.getElementById("btnExport").addEventListener("click", function () {
+          window.location.href = "/api/assets/export.csv";
+        });
+        document.getElementById("btnAdd").addEventListener("click", function () {
+          alert("Add asset: wire this to a form or POST /api/assets in a later step.");
+        });
+        document.getElementById("btnMenu").addEventListener("click", function () {
+          alert("Menu: add settings / help links here.");
+        });
+
+        var strip = document.getElementById("chipStrip");
+        document.getElementById("chipScrollL").addEventListener("click", function () {
+          strip.scrollBy({ left: -180, behavior: "smooth" });
+        });
+        document.getElementById("chipScrollR").addEventListener("click", function () {
+          strip.scrollBy({ left: 180, behavior: "smooth" });
+        });
+
+        load();
+      })();
+    </script>
+  </body>
+</html>
