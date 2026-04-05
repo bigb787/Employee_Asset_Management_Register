@@ -627,7 +627,8 @@
 
         function readRegisterBootstrap() {
           var o = window.__REGISTER_BOOTSTRAP__;
-          if (o && o.kinds && o.panels) return o;
+          if (o && typeof o === "object" && o.kinds && Array.isArray(o.panels) && o.panels.length)
+            return o;
           var el = document.getElementById("register-bootstrap");
           if (!el) return null;
           try {
@@ -635,6 +636,17 @@
           } catch (e) {
             return null;
           }
+        }
+
+        function hydrateRegPanelsFromBootstrap() {
+          var b = readRegisterBootstrap();
+          if (!b || !b.kinds) return false;
+          regKindsMeta = regKindsMeta || b.kinds;
+          if (Array.isArray(b.panels) && b.panels.length) {
+            regPanels = b.panels;
+            return true;
+          }
+          return false;
         }
 
         function panelForCategory(categoryId) {
@@ -671,16 +683,23 @@
             });
             if (r.ok) {
               var full = await r.json();
-              regKindsMeta = full.kinds;
-              regPanels = full.panels || [];
+              if (full.kinds) regKindsMeta = full.kinds;
+              if (Array.isArray(full.panels) && full.panels.length) {
+                regPanels = full.panels;
+              } else if (!regPanels.length) {
+                hydrateRegPanelsFromBootstrap();
+              }
+              if (!regKindsMeta || !regPanels.length) hydrateRegPanelsFromBootstrap();
               return regKindsMeta;
             }
           } catch (e) {}
           if (boot && boot.kinds) {
             regKindsMeta = boot.kinds;
-            regPanels = boot.panels || [];
+            if (Array.isArray(boot.panels) && boot.panels.length) regPanels = boot.panels;
+            else if (!regPanels.length) hydrateRegPanelsFromBootstrap();
             return regKindsMeta;
           }
+          if (hydrateRegPanelsFromBootstrap() && regKindsMeta) return regKindsMeta;
           throw new Error(
             "Register layout missing. Hard-refresh (Ctrl+F5). If /api/register-tables/meta 404s, check /api/debug-ui."
           );
@@ -927,19 +946,40 @@
           var chip = ev.target.closest(".chip");
           if (!chip) return;
           var id = chip.getAttribute("data-category-id");
+          hydrateRegPanelsFromBootstrap();
           if (panelForCategory(id)) {
             openRegisterPanel(id, chip).catch(function (e) {
               var m = e && e.message ? e.message : String(e);
               showErr("Register: " + m);
             });
-          } else if (isSummaryOnlyCategory(id)) {
+            return;
+          }
+          if (isSummaryOnlyCategory(id)) {
             openSummaryPanel(id, chip).catch(function (e) {
               var m = e && e.message ? e.message : String(e);
               showErr("Summary: " + m);
             });
-          } else {
-            alert("This category is not configured.");
+            return;
           }
+          fetchRegisterMeta(true)
+            .then(function () {
+              hydrateRegPanelsFromBootstrap();
+              if (panelForCategory(id)) {
+                return openRegisterPanel(id, chip);
+              }
+              if (isSummaryOnlyCategory(id)) {
+                return openSummaryPanel(id, chip);
+              }
+              alert(
+                "This category is not configured (chip id: " +
+                  id +
+                  "). Hard-refresh the page or open /api/debug-ui."
+              );
+            })
+            .catch(function (e) {
+              var m = e && e.message ? e.message : String(e);
+              showErr("Could not load register layout: " + m);
+            });
         });
 
         regTabs.addEventListener("click", function (ev) {
@@ -1062,10 +1102,7 @@
           loadRegTable(kind);
         });
 
-        (function initRegisterPanels() {
-          var b = readRegisterBootstrap();
-          if (b && b.panels) regPanels = b.panels;
-        })();
+        hydrateRegPanelsFromBootstrap();
 
         load();
       })();
