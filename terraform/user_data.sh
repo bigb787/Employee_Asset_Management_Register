@@ -35,11 +35,19 @@ systemctl daemon-reload
 systemctl enable asset-register
 systemctl restart asset-register || systemctl start asset-register
 
+install -d /etc/nginx/sites-available /etc/nginx/sites-enabled
 cp "$APP_DIR/nginx.conf" /etc/nginx/sites-available/asset-register
 ln -sf /etc/nginx/sites-available/asset-register /etc/nginx/sites-enabled/asset-register
-# Stock default serves "Welcome to nginx" and may live in sites-enabled OR conf.d
 rm -f /etc/nginx/sites-enabled/default
 rm -f /etc/nginx/conf.d/default.conf 2>/dev/null || true
+rm -f /etc/nginx/conf.d/default 2>/dev/null || true
+# Remove any conf.d snippet that still listens on 80 (loads before sites-enabled)
+for f in /etc/nginx/conf.d/*.conf; do
+  [ -f "$f" ] || continue
+  if grep -qE '^\s*listen\s+(\[::\]:)?80' "$f" 2>/dev/null; then
+    rm -f "$f"
+  fi
+done 2>/dev/null || true
 systemctl enable nginx
 nginx -t
 systemctl restart nginx
