@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, HTTPException
 
 from eamr.database import get_connection
 from eamr.employee_assets_ddl import ensure_employee_assets_tables
-from eamr.employee_assets_schema import KIND_SPECS, fields_for_kind, meta_payload
+from eamr.employee_assets_schema import KIND_SPECS, fields_for_kind
 
 router = APIRouter()
 
@@ -16,18 +16,6 @@ def _table(kind: str) -> str:
     if kind not in KIND_SPECS:
         raise HTTPException(status_code=404, detail=f"Unknown kind: {kind}")
     return KIND_SPECS[kind]["table"]
-
-
-@router.get("/meta")
-def employee_assets_meta():
-    """Column keys and labels for each sub-table (for forms and grids)."""
-    conn = get_connection()
-    try:
-        ensure_employee_assets_tables(conn)
-        conn.commit()
-    finally:
-        conn.close()
-    return meta_payload()
 
 
 @router.get("/{kind}")

@@ -16,12 +16,28 @@ from eamr import dashboard_json as _dashboard_json
 from eamr.dashboard_json import CATEGORIES_META, build_payload, verify_categories_meta_or_die
 from eamr.database import DB_PATH, get_connection, init_db
 from eamr.employee_assets_api import router as employee_assets_router
+from eamr.employee_assets_ddl import ensure_employee_assets_tables
+from eamr.employee_assets_schema import meta_payload
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "static"
 _LOG = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="Employee Asset Management Register")
+
+
+@app.get("/api/employee-assets/meta")
+def api_employee_assets_meta():
+    """Column metadata for Laptop / Desktop / Monitor grids (registered on app root for reliable routing)."""
+    conn = get_connection()
+    try:
+        ensure_employee_assets_tables(conn)
+        conn.commit()
+    finally:
+        conn.close()
+    return meta_payload()
+
+
 app.include_router(employee_assets_router, prefix="/api/employee-assets")
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
 
@@ -67,10 +83,15 @@ async def index(request: Request):
     bootstrap_b64 = base64.b64encode(cats_json.encode("utf-8")).decode("ascii")
     chip_defs = [{"id": c["id"], "color": c["color"]} for c in CATEGORIES_META]
     chip_defs_json = json.dumps(chip_defs)
+    employee_assets_meta_json = json.dumps(meta_payload())
+    base = str(request.base_url).rstrip("/")
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
+            "api_base": base,
+            "api_base_js": json.dumps(base),
+            "employee_assets_meta_json": employee_assets_meta_json,
             "categories": cats,
             "categories_bootstrap_json": cats_json,
             "bootstrap_b64": bootstrap_b64,

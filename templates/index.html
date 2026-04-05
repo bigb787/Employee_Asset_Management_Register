@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{ html_title }}</title>
+    <script>
+      window.__API_BASE__ = {{ api_base_js|safe }};
+      window.__EA_META_BOOTSTRAP__ = {{ employee_assets_meta_json|safe }};
+    </script>
     <style>
       :root {
         --bg: #f6f7f9;
@@ -253,6 +257,7 @@
       .ea-table-scroll {
         overflow-x: auto;
         max-width: 100%;
+        min-height: 120px;
       }
       .ea-table-scroll table {
         min-width: max-content;
@@ -358,7 +363,7 @@
           <p id="dashSubtitle">All company assets in one place</p>
           <p id="uiVerify" class="ui-verify">
             {{ ui_verify }}
-            <a href="/api/debug-ui" target="_blank" rel="noopener" style="color: #185fa5"
+            <a href="{{ api_base }}/api/debug-ui" target="_blank" rel="noopener" style="color: #185fa5"
               >Open /api/debug-ui</a
             >
             (must list GatePass; if the page chips look wrong, wrong app on this port).
@@ -422,11 +427,20 @@
 
     <script type="application/json" id="categories-bootstrap">{{ categories_bootstrap_json | safe }}</script>
     <script type="application/json" id="chip-defs">{{ chip_defs_json | safe }}</script>
+    <script type="application/json" id="employee-assets-meta-bootstrap">
+      {{ employee_assets_meta_json | safe }}
+    </script>
 
     <script>
       (function () {
         var chipStrip = document.getElementById("chipStrip");
         var errEl = document.getElementById("err");
+
+        function absApi(path) {
+          var b = typeof window.__API_BASE__ === "string" ? window.__API_BASE__ : "";
+          if (path.charAt(0) !== "/") path = "/" + path;
+          return b ? b + path : path;
+        }
 
         function showErr(msg) {
           errEl.textContent = msg;
@@ -550,7 +564,7 @@
 
         async function load() {
           try {
-            var url = "/api/dashboard-data?_=" + Date.now();
+            var url = absApi("/api/dashboard-data?_=" + Date.now());
             var res = await fetch(url, {
               credentials: "same-origin",
               cache: "no-store",
@@ -559,7 +573,7 @@
             render(await res.json());
           } catch (e) {
             try {
-              var r2 = await fetch("/static/dashboard-data.json?_=" + Date.now(), {
+              var r2 = await fetch(absApi("/static/dashboard-data.json?_=" + Date.now()), {
                 cache: "no-store",
               });
               if (!r2.ok) throw new Error("static JSON missing");
@@ -571,7 +585,7 @@
         }
 
         document.getElementById("btnExport").addEventListener("click", function () {
-          window.location.href = "/api/assets/export.csv";
+          window.location.href = absApi("/api/assets/export.csv");
         });
         document.getElementById("btnAdd").addEventListener("click", function () {
           alert("Click the Employee_Assets category chip, then use Laptop / Desktop / Monitor tabs and + Add row.");
@@ -589,15 +603,40 @@
         var eaEditingId = null;
         var eaModalKind = "laptops";
 
+        function readEaMetaBootstrap() {
+          var o = window.__EA_META_BOOTSTRAP__;
+          if (o && typeof o === "object" && o.laptops && o.laptops.columns) return o;
+          var el = document.getElementById("employee-assets-meta-bootstrap");
+          if (!el) return null;
+          try {
+            return JSON.parse(el.textContent.trim());
+          } catch (e) {
+            return null;
+          }
+        }
+
         async function fetchEaMeta(force) {
           if (eaMeta && !force) return eaMeta;
-          var r = await fetch("/api/employee-assets/meta?_=" + Date.now(), { cache: "no-store" });
-          if (!r.ok) {
-            var t = await r.text();
-            throw new Error("meta HTTP " + r.status + ": " + t.slice(0, 400));
+          var boot = readEaMetaBootstrap();
+          try {
+            var r = await fetch(absApi("/api/employee-assets/meta?_=" + Date.now()), {
+              cache: "no-store",
+            });
+            if (r.ok) {
+              eaMeta = await r.json();
+              return eaMeta;
+            }
+          } catch (e) {
+            /* network / CORS — fall through to bootstrap */
           }
-          eaMeta = await r.json();
-          return eaMeta;
+          if (boot) {
+            eaMeta = boot;
+            return eaMeta;
+          }
+          throw new Error(
+            "Employee_Assets layout missing (page template incomplete). Hard-refresh (Ctrl+F5). " +
+              "If /api/employee-assets/meta returns 404, another app may be on this port — open /api/debug-ui."
+          );
         }
 
         async function loadEaTable(kind) {
@@ -605,7 +644,10 @@
           eaTableScroll.innerHTML = '<p class="empty" style="padding:20px">Loading…</p>';
           try {
             await fetchEaMeta(true);
-            var r = await fetch("/api/employee-assets/" + kind + "?_=" + Date.now(), { cache: "no-store" });
+            var r = await fetch(
+              absApi("/api/employee-assets/" + kind + "?_=" + Date.now()),
+              { cache: "no-store" }
+            );
             if (!r.ok) {
               var errBody = await r.text();
               throw new Error(kind + " HTTP " + r.status + ": " + errBody.slice(0, 400));
@@ -653,17 +695,36 @@
               btn.addEventListener("click", async function () {
                 var id = parseInt(btn.getAttribute("data-id"), 10);
                 if (!confirm("Delete row " + id + "?")) return;
-                var dr = await fetch("/api/employee-assets/" + kind + "/" + id, { method: "DELETE" });
+                var dr = await fetch(absApi("/api/employee-assets/" + kind + "/" + id), {
+                  method: "DELETE",
+                });
                 if (!dr.ok) alert("Delete failed: " + dr.status);
                 else loadEaTable(kind);
               });
             });
           } catch (e) {
             var msg = e && e.message ? e.message : String(e);
-            eaTableScroll.innerHTML =
-              '<p class="empty" style="padding:20px;color:#b91c1c;word-break:break-word">' +
-              escapeHtml(msg) +
-              "</p>";
+            var cols = eaMeta && eaMeta[kind] && eaMeta[kind].columns;
+            if (cols && cols.length) {
+              var colspan = 2 + cols.length + 2;
+              var htmlErr =
+                "<table><thead><tr><th>ID</th><th>Actions</th>";
+              cols.forEach(function (c) {
+                htmlErr += "<th>" + escapeHtml(c.label) + "</th>";
+              });
+              htmlErr +=
+                "<th>created_at</th><th>updated_at</th></tr></thead><tbody><tr><td colspan=\"" +
+                colspan +
+                '" style="padding:20px;color:#b91c1c;word-break:break-word">' +
+                escapeHtml(msg) +
+                "</td></tr></tbody></table>";
+              eaTableScroll.innerHTML = htmlErr;
+            } else {
+              eaTableScroll.innerHTML =
+                '<p class="empty" style="padding:20px;color:#b91c1c;word-break:break-word">' +
+                escapeHtml(msg) +
+                "</p>";
+            }
           }
         }
 
@@ -679,11 +740,8 @@
           });
           if (fromChip) fromChip.classList.add("chip-selected");
           eaPanel.style.display = "block";
-          try {
-            await fetchEaMeta(true);
-          } catch (e) {}
           setEaTabActive(eaCurrentKind);
-          loadEaTable(eaCurrentKind);
+          await loadEaTable(eaCurrentKind);
           eaPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
 
@@ -698,8 +756,12 @@
           var chip = ev.target.closest(".chip");
           if (!chip) return;
           var id = chip.getAttribute("data-category-id");
-          if (id === "employee_assets") openEmployeeAssetsPanel(chip);
-          else alert("Detail tables for this category are not set up yet.");
+          if (id === "employee_assets") {
+            openEmployeeAssetsPanel(chip).catch(function (e) {
+              var m = e && e.message ? e.message : String(e);
+              showErr("Employee_Assets: " + m);
+            });
+          } else alert("Detail tables for this category are not set up yet.");
         });
 
         eaTabs.addEventListener("click", function (ev) {
@@ -736,7 +798,10 @@
           var form = document.getElementById("eaForm");
           form.innerHTML = buildEaFormHtml(kind);
           if (rowId != null) {
-            var r = await fetch("/api/employee-assets/" + kind + "?_=" + Date.now(), { cache: "no-store" });
+            var r = await fetch(
+              absApi("/api/employee-assets/" + kind + "?_=" + Date.now()),
+              { cache: "no-store" }
+            );
             var data = await r.json();
             var row = (data.rows || []).find(function (x) {
               return x.id === rowId;
@@ -776,10 +841,10 @@
           var kind = eaModalKind;
           var url, method;
           if (eaEditingId == null) {
-            url = "/api/employee-assets/" + kind;
+            url = absApi("/api/employee-assets/" + kind);
             method = "POST";
           } else {
-            url = "/api/employee-assets/" + kind + "/" + eaEditingId;
+            url = absApi("/api/employee-assets/" + kind + "/" + eaEditingId);
             method = "PUT";
           }
           var r = await fetch(url, {
