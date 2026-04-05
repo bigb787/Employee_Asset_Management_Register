@@ -6,14 +6,9 @@
     <title>{{ html_title }}</title>
     <script>
       window.__API_BASE__ = {{ api_base_js|safe }};
-      (function () {
-        try {
-          var _b64 = "{{ register_bootstrap_b64 }}".replace(/\s+/g, "");
-          window.__REGISTER_BOOTSTRAP__ = JSON.parse(atob(_b64));
-        } catch (e) {
-          window.__REGISTER_BOOTSTRAP__ = null;
-        }
-      })();
+      /* Bootstrap is read from #register-bootstrap-b64 after DOM parse — avoids huge
+         inline strings in <head> (truncation / parse errors can break all page scripts). */
+      window.__REGISTER_BOOTSTRAP__ = null;
     </script>
     <style>
       :root {
@@ -632,19 +627,37 @@
         var regEditingId = null;
         var regModalKind = "laptop";
 
+        function parseRegisterJsonFromB64(raw) {
+          var t = (raw || "").replace(/\s+/g, "");
+          if (!t) return null;
+          try {
+            var bin = atob(t);
+            var jsonStr;
+            if (typeof TextDecoder !== "undefined") {
+              var bytes = new Uint8Array(bin.length);
+              for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+              jsonStr = new TextDecoder("utf-8").decode(bytes);
+            } else {
+              jsonStr = bin;
+            }
+            return JSON.parse(jsonStr);
+          } catch (e) {
+            return null;
+          }
+        }
+
         function readRegisterBootstrap() {
           var o = window.__REGISTER_BOOTSTRAP__;
           if (o && typeof o === "object" && o.kinds && Array.isArray(o.panels) && o.panels.length)
             return o;
           var el = document.getElementById("register-bootstrap-b64");
           if (!el) return null;
-          try {
-            var t = el.textContent.replace(/\s+/g, "");
-            if (!t) return null;
-            return JSON.parse(atob(t));
-          } catch (e) {
-            return null;
+          var parsed = parseRegisterJsonFromB64(el.textContent);
+          if (parsed && parsed.kinds && Array.isArray(parsed.panels) && parsed.panels.length) {
+            window.__REGISTER_BOOTSTRAP__ = parsed;
+            return parsed;
           }
+          return null;
         }
 
         function hydrateRegPanelsFromBootstrap() {
@@ -707,6 +720,13 @@
           regTableScroll.innerHTML = '<p class="empty" style="padding:20px">Loading…</p>';
           try {
             await fetchRegisterMeta(true);
+            if (!regKindsMeta || !regKindsMeta[kind] || !regKindsMeta[kind].columns) {
+              throw new Error(
+                'No column metadata for register kind "' +
+                  kind +
+                  '". Hard-refresh the page or check /api/register-tables/meta.'
+              );
+            }
             var r = await fetch(absApi(REG_API + "/" + kind + "?_=" + Date.now()), {
               cache: "no-store",
             });
@@ -797,8 +817,16 @@
         }
 
         async function openRegisterPanel(categoryId, fromChip) {
+          hydrateRegPanelsFromBootstrap();
           var panel = panelForCategory(categoryId);
-          if (!panel || !panel.tabs || !panel.tabs.length) return;
+          if (!panel || !panel.tabs || !panel.tabs.length) {
+            showErr(
+              'Register layout for "' +
+                (categoryId || "?") +
+                '" is missing. Hard-refresh (Ctrl+F5) or confirm /api/register-tables/meta works.'
+            );
+            return;
+          }
           detailMode = "register";
           summaryCategory = null;
           document.querySelectorAll(".chip-selected").forEach(function (c) {

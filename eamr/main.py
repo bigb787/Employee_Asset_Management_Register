@@ -85,7 +85,7 @@ async def index(request: Request):
     chip_defs = [{"id": c["id"], "color": c["color"]} for c in CATEGORIES_META]
     chip_defs_json = json.dumps(chip_defs)
     _register_payload = json.dumps(
-        register_bootstrap_dict(), separators=(",", ":"), ensure_ascii=False
+        register_bootstrap_dict(), separators=(",", ":"), ensure_ascii=True
     )
     register_bootstrap_b64 = base64.b64encode(_register_payload.encode("utf-8")).decode("ascii")
     base = str(request.base_url).rstrip("/")

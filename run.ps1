@@ -7,7 +7,7 @@ $Port = 8000
 if ($env:ASSET_REGISTER_PORT) { $Port = [int]$env:ASSET_REGISTER_PORT }
 
 Write-Host "Project: $(Get-Location)"
-Write-Host "Checking which Python loads (must show Employee_Devices, GatePass, Networking, etc.)..."
+Write-Host "Checking which Python loads (must list Laptop, Desktop, … GatePass, InfoDesk_Leavers)..."
 python -c "import pathlib; from eamr.dashboard_json import verify_categories_meta_or_die; import eamr.dashboard_json as d; verify_categories_meta_or_die(); print('  dashboard_json:', pathlib.Path(d.__file__).resolve()); print('  labels:', [x['label'] for x in d.CATEGORIES_META])"
 
 $listen = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
