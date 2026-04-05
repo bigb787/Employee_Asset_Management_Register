@@ -9,7 +9,8 @@ Group=ubuntu
 WorkingDirectory=/home/ubuntu/Employee_Asset_Management_Register
 Environment=PATH=/home/ubuntu/Employee_Asset_Management_Register/venv/bin
 ExecStart=/home/ubuntu/Employee_Asset_Management_Register/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
-Restart=on-failure
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

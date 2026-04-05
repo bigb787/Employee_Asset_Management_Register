@@ -37,8 +37,11 @@ systemctl restart asset-register || systemctl start asset-register
 
 cp "$APP_DIR/nginx.conf" /etc/nginx/sites-available/asset-register
 ln -sf /etc/nginx/sites-available/asset-register /etc/nginx/sites-enabled/asset-register
+# Stock default serves "Welcome to nginx" and may live in sites-enabled OR conf.d
 rm -f /etc/nginx/sites-enabled/default
+rm -f /etc/nginx/conf.d/default.conf 2>/dev/null || true
 systemctl enable nginx
+nginx -t
 systemctl restart nginx
 
 (sudo -u ubuntu crontab -l 2>/dev/null | grep -v "scripts/backup.sh" || true; echo "0 2 * * * /home/ubuntu/Employee_Asset_Management_Register/scripts/backup.sh >> /var/log/asset-backup.log 2>&1") | sudo -u ubuntu crontab -
