@@ -84,7 +84,10 @@ async def index(request: Request):
     bootstrap_b64 = base64.b64encode(cats_json.encode("utf-8")).decode("ascii")
     chip_defs = [{"id": c["id"], "color": c["color"]} for c in CATEGORIES_META]
     chip_defs_json = json.dumps(chip_defs)
-    register_bootstrap_json = json.dumps(register_bootstrap_dict())
+    _register_payload = json.dumps(
+        register_bootstrap_dict(), separators=(",", ":"), ensure_ascii=False
+    )
+    register_bootstrap_b64 = base64.b64encode(_register_payload.encode("utf-8")).decode("ascii")
     base = str(request.base_url).rstrip("/")
     return templates.TemplateResponse(
         "index.html",
@@ -92,7 +95,7 @@ async def index(request: Request):
             "request": request,
             "api_base": base,
             "api_base_js": json.dumps(base),
-            "register_bootstrap_json": register_bootstrap_json,
+            "register_bootstrap_b64": register_bootstrap_b64,
             "categories": cats,
             "categories_bootstrap_json": cats_json,
             "bootstrap_b64": bootstrap_b64,

@@ -6,7 +6,14 @@
     <title>{{ html_title }}</title>
     <script>
       window.__API_BASE__ = {{ api_base_js|safe }};
-      window.__REGISTER_BOOTSTRAP__ = {{ register_bootstrap_json|safe }};
+      (function () {
+        try {
+          var _b64 = "{{ register_bootstrap_b64 }}".replace(/\s+/g, "");
+          window.__REGISTER_BOOTSTRAP__ = JSON.parse(atob(_b64));
+        } catch (e) {
+          window.__REGISTER_BOOTSTRAP__ = null;
+        }
+      })();
     </script>
     <style>
       :root {
@@ -431,8 +438,8 @@
 
     <script type="application/json" id="categories-bootstrap">{{ categories_bootstrap_json | safe }}</script>
     <script type="application/json" id="chip-defs">{{ chip_defs_json | safe }}</script>
-    <script type="application/json" id="register-bootstrap">
-      {{ register_bootstrap_json | safe }}
+    <script type="text/plain" id="register-bootstrap-b64" style="display: none">
+      {{ register_bootstrap_b64 | safe }}
     </script>
 
     <script>
@@ -629,10 +636,12 @@
           var o = window.__REGISTER_BOOTSTRAP__;
           if (o && typeof o === "object" && o.kinds && Array.isArray(o.panels) && o.panels.length)
             return o;
-          var el = document.getElementById("register-bootstrap");
+          var el = document.getElementById("register-bootstrap-b64");
           if (!el) return null;
           try {
-            return JSON.parse(el.textContent.trim());
+            var t = el.textContent.replace(/\s+/g, "");
+            if (!t) return null;
+            return JSON.parse(atob(t));
           } catch (e) {
             return null;
           }
@@ -675,8 +684,7 @@
         }
 
         async function fetchRegisterMeta(force) {
-          if (regKindsMeta && !force) return regKindsMeta;
-          var boot = readRegisterBootstrap();
+          if (regKindsMeta && regPanels.length && !force) return regKindsMeta;
           try {
             var r = await fetch(absApi(REG_API + "/meta?_=" + Date.now()), {
               cache: "no-store",
@@ -684,24 +692,13 @@
             if (r.ok) {
               var full = await r.json();
               if (full.kinds) regKindsMeta = full.kinds;
-              if (Array.isArray(full.panels) && full.panels.length) {
-                regPanels = full.panels;
-              } else if (!regPanels.length) {
-                hydrateRegPanelsFromBootstrap();
-              }
-              if (!regKindsMeta || !regPanels.length) hydrateRegPanelsFromBootstrap();
-              return regKindsMeta;
+              if (Array.isArray(full.panels) && full.panels.length) regPanels = full.panels;
             }
           } catch (e) {}
-          if (boot && boot.kinds) {
-            regKindsMeta = boot.kinds;
-            if (Array.isArray(boot.panels) && boot.panels.length) regPanels = boot.panels;
-            else if (!regPanels.length) hydrateRegPanelsFromBootstrap();
-            return regKindsMeta;
-          }
-          if (hydrateRegPanelsFromBootstrap() && regKindsMeta) return regKindsMeta;
+          hydrateRegPanelsFromBootstrap();
+          if (regKindsMeta && regPanels.length) return regKindsMeta;
           throw new Error(
-            "Register layout missing. Hard-refresh (Ctrl+F5). If /api/register-tables/meta 404s, check /api/debug-ui."
+            "Register layout missing (page bootstrap could not be read). Hard-refresh (Ctrl+F5)."
           );
         }
 
