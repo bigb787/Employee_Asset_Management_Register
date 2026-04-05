@@ -3,12 +3,401 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Employee Asset Management Register</title>
-    <link rel="stylesheet" href="/static/css/style.css" />
+    <title>Employee Asset Register</title>
+    <style>
+      :root {
+        --color-text-primary: #1a1a1a;
+        --color-text-secondary: #5c5c5c;
+        --color-brand: #185fa5;
+        --color-export: #1d9e75;
+        --color-border: #e0e0e0;
+        --color-sidebar-hover: #f5f5f5;
+        --color-sidebar-active-bg: #e6f1fb;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: var(--color-text-primary);
+        background: #fafafa;
+      }
+
+      /* ——— Top bar ——— */
+      .topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+        border-bottom: 0.5px solid var(--color-border);
+        z-index: 100;
+      }
+
+      .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--color-brand);
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .brand-text {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+      }
+
+      .brand-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        letter-spacing: -0.02em;
+      }
+
+      .iso-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+        background: #1d9e75;
+        border-radius: 4px;
+        vertical-align: middle;
+      }
+
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--color-brand);
+        outline-offset: 2px;
+      }
+
+      .btn-add {
+        background: #185fa5;
+      }
+
+      .btn-add:hover {
+        background: #144a84;
+      }
+
+      .btn-export {
+        background: #1d9e75;
+      }
+
+      .btn-export:hover {
+        background: #178562;
+      }
+
+      /* ——— Shell below topbar ——— */
+      .app-shell {
+        display: flex;
+        padding-top: 56px;
+        min-height: 100vh;
+      }
+
+      /* ——— Sidebar ——— */
+      .sidebar {
+        width: 220px;
+        flex-shrink: 0;
+        min-height: calc(100vh - 56px);
+        background: #fff;
+        border-right: 0.5px solid var(--color-border);
+        padding: 12px 0;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.35;
+        color: var(--color-text-secondary);
+        background: transparent;
+        border: none;
+        border-left: 3px solid transparent;
+        border-radius: 0;
+        cursor: pointer;
+        text-align: left;
+        font-family: inherit;
+      }
+
+      .nav-item:hover {
+        background: var(--color-sidebar-hover);
+      }
+
+      .nav-item.is-active {
+        background: var(--color-sidebar-active-bg);
+        color: var(--color-brand);
+        border-left-color: var(--color-brand);
+      }
+
+      .nav-item .nav-ico {
+        font-size: 16px;
+        line-height: 1.35;
+        width: 22px;
+        flex-shrink: 0;
+      }
+
+      .nav-item .nav-label {
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ——— Main content ——— */
+      .main {
+        flex: 1;
+        min-width: 0;
+        padding: 24px 28px 32px;
+        overflow: auto;
+      }
+
+      .panel {
+        display: none;
+        max-width: 1200px;
+      }
+
+      .panel.is-visible {
+        display: block;
+      }
+
+      .panel h2 {
+        margin: 0 0 8px;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+
+      .panel-desc {
+        margin: 0 0 24px;
+        font-size: 14px;
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+      }
+
+      .placeholder-card {
+        background: #fff;
+        border: 0.5px solid var(--color-border);
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+      }
+
+      .placeholder-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .placeholder-card p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+      }
+
+      .empty-table-hint {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        padding: 32px 16px;
+        text-align: center;
+        background: #fff;
+        border: 0.5px dashed var(--color-border);
+        border-radius: 8px;
+      }
+    </style>
   </head>
   <body>
-    <h1>Employee Asset Management Register</h1>
-    <p>STEP 1 scaffold — UI in later steps.</p>
-    <script src="/static/js/main.js"></script>
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="brand-icon" aria-hidden="true"></span>
+        <div class="brand-text">
+          <span class="brand-title">Employee Asset Register</span>
+          <span class="iso-badge" title="Information security alignment">ISO 27001 ✓</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button type="button" class="btn btn-add" id="btnAddAsset" aria-label="Add asset">
+          + Add Asset
+        </button>
+        <button type="button" class="btn btn-export" id="btnExportAll" aria-label="Export all">
+          ↓ Export All
+        </button>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <nav class="sidebar" aria-label="Primary">
+        <button type="button" class="nav-item is-active" data-panel="employee" aria-current="page">
+          <span class="nav-ico" aria-hidden="true">💼</span>
+          <span class="nav-label">
+            <span>Employee</span>
+            <span>Assets</span>
+          </span>
+        </button>
+        <button type="button" class="nav-item" data-panel="internal">
+          <span class="nav-ico" aria-hidden="true">🖥️</span>
+          <span class="nav-label">
+            <span>Internal</span>
+            <span>Applications</span>
+          </span>
+        </button>
+        <button type="button" class="nav-item" data-panel="external">
+          <span class="nav-ico" aria-hidden="true">🌐</span>
+          <span class="nav-label">
+            <span>External</span>
+            <span>Applications</span>
+          </span>
+        </button>
+        <button type="button" class="nav-item" data-panel="admin">
+          <span class="nav-ico" aria-hidden="true">🔧</span>
+          <span class="nav-label">
+            <span>Admin</span>
+            <span>Assets</span>
+          </span>
+        </button>
+      </nav>
+
+      <main class="main">
+        <section id="panel-employee" class="panel is-visible" aria-labelledby="heading-employee">
+          <h2 id="heading-employee">Employee Assets</h2>
+          <p class="panel-desc">
+            Laptops, phones, monitors, and other hardware assigned to employees. Use <strong>+ Add Asset</strong> to
+            register a device or <strong>Export All</strong> to download a snapshot.
+          </p>
+          <div class="placeholder-card">
+            <h3>Register &amp; assignments</h3>
+            <p>
+              This area will list employee devices, serial numbers, assignment dates, and status. Connect your API
+              endpoints here in a later step.
+            </p>
+          </div>
+          <div class="empty-table-hint">No rows yet — data will load from the backend when wired.</div>
+        </section>
+
+        <section id="panel-internal" class="panel" aria-labelledby="heading-internal" hidden>
+          <h2 id="heading-internal">Internal Applications</h2>
+          <p class="panel-desc">
+            Corporate systems, portals, and line-of-business tools used inside the organisation.
+          </p>
+          <div class="placeholder-card">
+            <h3>Application inventory</h3>
+            <p>Track owners, environments, URLs, and support contacts for internal apps.</p>
+          </div>
+          <div class="empty-table-hint">No internal applications loaded.</div>
+        </section>
+
+        <section id="panel-external" class="panel" aria-labelledby="heading-external" hidden>
+          <h2 id="heading-external">External Applications</h2>
+          <p class="panel-desc">
+            Third-party SaaS and vendor-hosted services (licences, renewal dates, data classification).
+          </p>
+          <div class="placeholder-card">
+            <h3>Vendor &amp; licence overview</h3>
+            <p>Consolidate contracts, billing cycles, and DPA status in one view.</p>
+          </div>
+          <div class="empty-table-hint">No external applications loaded.</div>
+        </section>
+
+        <section id="panel-admin" class="panel" aria-labelledby="heading-admin" hidden>
+          <h2 id="heading-admin">Admin Assets</h2>
+          <p class="panel-desc">
+            Infrastructure and tooling used by IT / admin teams (servers, network gear, jump boxes).
+          </p>
+          <div class="placeholder-card">
+            <h3>Operational equipment</h3>
+            <p>Racks, firewalls, backup appliances, and privileged-access systems belong here.</p>
+          </div>
+          <div class="empty-table-hint">No admin assets loaded.</div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var navButtons = document.querySelectorAll(".nav-item");
+        var panels = {
+          employee: document.getElementById("panel-employee"),
+          internal: document.getElementById("panel-internal"),
+          external: document.getElementById("panel-external"),
+          admin: document.getElementById("panel-admin"),
+        };
+
+        function showPanel(key) {
+          Object.keys(panels).forEach(function (k) {
+            var el = panels[k];
+            if (!el) return;
+            var on = k === key;
+            el.classList.toggle("is-visible", on);
+            el.hidden = !on;
+          });
+
+          navButtons.forEach(function (btn) {
+            var active = btn.getAttribute("data-panel") === key;
+            btn.classList.toggle("is-active", active);
+            if (active) btn.setAttribute("aria-current", "page");
+            else btn.removeAttribute("aria-current");
+          });
+        }
+
+        navButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var key = btn.getAttribute("data-panel");
+            if (key) showPanel(key);
+          });
+        });
+
+        document.getElementById("btnAddAsset").addEventListener("click", function () {
+          window.alert("Add Asset: connect this action to your API (e.g. open a form or POST /api/...).");
+        });
+
+        document.getElementById("btnExportAll").addEventListener("click", function () {
+          window.alert("Export All: connect this action to download CSV/XLSX from your backend.");
+        });
+      })();
+    </script>
   </body>
 </html>
