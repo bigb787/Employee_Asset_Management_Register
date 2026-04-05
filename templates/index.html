@@ -379,7 +379,7 @@
         <div class="chip-section-label" id="chipSectionLabel">Categories (7)</div>
         <div class="chip-strip" id="chipStrip" aria-label="Categories">
           {% for c in categories %}
-          <div class="chip" data-category-id="{{ c.id }}">
+          <div class="chip chip--clickable" data-category-id="{{ c.id }}">
             <span class="chip-dot" style="background:{{ c.color }}"></span>
             <span>{{ c.label }}</span>
             <span class="chip-count">{{ c.count }}</span>
@@ -418,12 +418,6 @@
         </div>
       </div>
 
-      <section class="panel">
-        <div class="panel-head">Recent assets</div>
-        <div id="tableWrap">
-          <div class="empty" id="emptyState">Loading…</div>
-        </div>
-      </section>
     </div>
 
     <script type="application/json" id="categories-bootstrap">{{ categories_bootstrap_json | safe }}</script>
@@ -432,8 +426,6 @@
     <script>
       (function () {
         var chipStrip = document.getElementById("chipStrip");
-        var tableWrap = document.getElementById("tableWrap");
-        var emptyState = document.getElementById("emptyState");
         var errEl = document.getElementById("err");
 
         function showErr(msg) {
@@ -547,29 +539,6 @@
             chipStrip.appendChild(el);
           });
 
-          var items = data.items || [];
-          if (items.length === 0) {
-            tableWrap.innerHTML =
-              '<div class="empty">No assets yet. Use GitHub Actions + SQLite or add rows in <code>data/assets.db</code>.</div>';
-            return;
-          }
-
-          var html =
-            "<table><thead><tr><th>Name</th><th>Category</th><th>Serial</th><th>Created</th></tr></thead><tbody>";
-          items.forEach(function (r) {
-            html +=
-              "<tr><td>" +
-              escapeHtml(r.name) +
-              "</td><td>" +
-              escapeHtml(categoryLabel(r.category)) +
-              "</td><td>" +
-              escapeHtml(r.serial_number || "—") +
-              "</td><td>" +
-              escapeHtml(r.created_at || "—") +
-              "</td></tr>";
-          });
-          html += "</tbody></table>";
-          tableWrap.innerHTML = html;
         }
 
         function escapeHtml(s) {
@@ -597,7 +566,6 @@
               render(await r2.json());
             } catch (e2) {
               showErr("Could not load dashboard data. Run: python scripts/build_dashboard_data.py");
-              tableWrap.innerHTML = "";
             }
           }
         }
@@ -606,7 +574,7 @@
           window.location.href = "/api/assets/export.csv";
         });
         document.getElementById("btnAdd").addEventListener("click", function () {
-          alert("Add asset: wire this to a form or POST /api/assets in a later step.");
+          alert("Click the Employee_Assets category chip, then use Laptop / Desktop / Monitor tabs and + Add row.");
         });
         document.getElementById("btnMenu").addEventListener("click", function () {
           alert("Menu: add settings / help links here.");
@@ -621,10 +589,13 @@
         var eaEditingId = null;
         var eaModalKind = "laptops";
 
-        async function fetchEaMeta() {
-          if (eaMeta) return eaMeta;
+        async function fetchEaMeta(force) {
+          if (eaMeta && !force) return eaMeta;
           var r = await fetch("/api/employee-assets/meta?_=" + Date.now(), { cache: "no-store" });
-          if (!r.ok) throw new Error("meta " + r.status);
+          if (!r.ok) {
+            var t = await r.text();
+            throw new Error("meta HTTP " + r.status + ": " + t.slice(0, 400));
+          }
           eaMeta = await r.json();
           return eaMeta;
         }
@@ -633,9 +604,12 @@
           eaCurrentKind = kind;
           eaTableScroll.innerHTML = '<p class="empty" style="padding:20px">Loading…</p>';
           try {
-            await fetchEaMeta();
+            await fetchEaMeta(true);
             var r = await fetch("/api/employee-assets/" + kind + "?_=" + Date.now(), { cache: "no-store" });
-            if (!r.ok) throw new Error(kind + " " + r.status);
+            if (!r.ok) {
+              var errBody = await r.text();
+              throw new Error(kind + " HTTP " + r.status + ": " + errBody.slice(0, 400));
+            }
             var data = await r.json();
             var cols = eaMeta[kind].columns;
             var html =
@@ -685,8 +659,11 @@
               });
             });
           } catch (e) {
+            var msg = e && e.message ? e.message : String(e);
             eaTableScroll.innerHTML =
-              '<p class="empty" style="padding:20px;color:#b91c1c">Could not load table. Is the API running?</p>';
+              '<p class="empty" style="padding:20px;color:#b91c1c;word-break:break-word">' +
+              escapeHtml(msg) +
+              "</p>";
           }
         }
 
@@ -703,7 +680,7 @@
           if (fromChip) fromChip.classList.add("chip-selected");
           eaPanel.style.display = "block";
           try {
-            await fetchEaMeta();
+            await fetchEaMeta(true);
           } catch (e) {}
           setEaTabActive(eaCurrentKind);
           loadEaTable(eaCurrentKind);
@@ -751,7 +728,7 @@
         }
 
         async function openEaModal(kind, rowId) {
-          await fetchEaMeta();
+          await fetchEaMeta(true);
           eaModalKind = kind;
           eaEditingId = rowId == null ? null : rowId;
           document.getElementById("eaModalTitle").textContent =

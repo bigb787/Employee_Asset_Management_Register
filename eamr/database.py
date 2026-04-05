@@ -2,6 +2,8 @@
 import sqlite3
 from pathlib import Path
 
+from eamr.employee_assets_ddl import ensure_employee_assets_tables
+
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DB_PATH = DATA_DIR / "assets.db"
 SCHEMA_PATH = DATA_DIR / "schema.sql"
@@ -24,6 +26,7 @@ def init_db() -> None:
         from eamr.dashboard_json import ensure_schema, seed_if_empty
 
         ensure_schema(conn)
+        ensure_employee_assets_tables(conn)
         seed_if_empty(conn)
         conn.commit()
     finally:

@@ -20,6 +20,7 @@ from eamr.dashboard_json import (  # noqa: E402
     ensure_schema,
     seed_if_empty,
 )
+from eamr.employee_assets_ddl import ensure_employee_assets_tables  # noqa: E402
 
 DATA_DIR = ROOT / "data"
 DB_PATH = DATA_DIR / "assets.db"
@@ -33,6 +34,7 @@ def main() -> int:
     conn = sqlite3.connect(DB_PATH)
     try:
         ensure_schema(conn)
+        ensure_employee_assets_tables(conn)
         seed_if_empty(conn)
         payload = build_payload(conn)
     finally:

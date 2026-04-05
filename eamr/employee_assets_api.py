@@ -1,9 +1,12 @@
 """REST API for Employee_Assets sub-tables (laptops, desktops, monitors)."""
 from __future__ import annotations
 
+import sqlite3
+
 from fastapi import APIRouter, Body, HTTPException
 
 from eamr.database import get_connection
+from eamr.employee_assets_ddl import ensure_employee_assets_tables
 from eamr.employee_assets_schema import KIND_SPECS, fields_for_kind, meta_payload
 
 router = APIRouter()
@@ -18,6 +21,12 @@ def _table(kind: str) -> str:
 @router.get("/meta")
 def employee_assets_meta():
     """Column keys and labels for each sub-table (for forms and grids)."""
+    conn = get_connection()
+    try:
+        ensure_employee_assets_tables(conn)
+        conn.commit()
+    finally:
+        conn.close()
     return meta_payload()
 
 
@@ -30,9 +39,17 @@ def list_rows(kind: str):
     cols_sql = "id, " + ", ".join(fields) + ", created_at, updated_at"
     conn = get_connection()
     try:
-        cur = conn.execute(f"SELECT {cols_sql} FROM {table} ORDER BY id DESC")
-        rows = [{k: r[k] for k in r.keys()} for r in cur.fetchall()]
-        return {"kind": kind, "rows": rows}
+        ensure_employee_assets_tables(conn)
+        conn.commit()
+        try:
+            cur = conn.execute(f"SELECT {cols_sql} FROM {table} ORDER BY id DESC")
+            rows = [{k: r[k] for k in r.keys()} for r in cur.fetchall()]
+            return {"kind": kind, "rows": rows}
+        except sqlite3.OperationalError as e:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Database error (try restarting the server): {e}",
+            ) from e
     finally:
         conn.close()
 
@@ -47,6 +64,7 @@ def create_row(kind: str, body: dict = Body(default_factory=dict)):
     colnames = ", ".join(fields)
     conn = get_connection()
     try:
+        ensure_employee_assets_tables(conn)
         conn.execute(
             f"INSERT INTO {table} ({colnames}, updated_at) VALUES ({placeholders}, datetime('now'))",
             vals,
@@ -68,6 +86,7 @@ def update_row(kind: str, row_id: int, body: dict = Body(default_factory=dict)):
     vals.append(row_id)
     conn = get_connection()
     try:
+        ensure_employee_assets_tables(conn)
         cur = conn.execute(
             f"UPDATE {table} SET {sets}, updated_at = datetime('now') WHERE id = ?",
             vals,
@@ -86,6 +105,7 @@ def delete_row(kind: str, row_id: int):
     table = KIND_SPECS[kind]["table"]
     conn = get_connection()
     try:
+        ensure_employee_assets_tables(conn)
         cur = conn.execute(f"DELETE FROM {table} WHERE id = ?", (row_id,))
         conn.commit()
         if cur.rowcount == 0:
