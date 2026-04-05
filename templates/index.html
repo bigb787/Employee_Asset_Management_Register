@@ -262,11 +262,15 @@
 
         function categoryLabel(id) {
           var map = {
-            employee_devices: "Employee devices",
-            network: "Network",
-            cloud_assets: "Cloud assets",
-            infodesk_apps: "Infodesk apps",
-            third_party: "3rd party software",
+            employee_assets: "Employee_Assets",
+            internal_assets: "Internal Assets",
+            external_assets: "External Assets",
+            admin_assets: "Admin_Assets",
+            employee_devices: "Employee_Assets",
+            network: "Internal Assets",
+            cloud_assets: "External Assets",
+            infodesk_apps: "Internal Assets",
+            third_party: "Admin_Assets",
           };
           return map[id] || id;
         }

@@ -8,30 +8,75 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 SCHEMA_PATH = DATA_DIR / "schema.sql"
 
+# Chip headers (labels shown in the UI)
 CATEGORIES_META = [
-    {"id": "employee_devices", "label": "Employee devices", "color": "#185FA5"},
-    {"id": "network", "label": "Network", "color": "#4B2E83"},
-    {"id": "cloud_assets", "label": "Cloud assets", "color": "#1E3A5F"},
-    {"id": "infodesk_apps", "label": "Infodesk apps", "color": "#8B3A3A"},
-    {"id": "third_party", "label": "3rd party software", "color": "#9B7EBD"},
+    {"id": "employee_assets", "label": "Employee_Assets", "color": "#185FA5"},
+    {"id": "internal_assets", "label": "Internal Assets", "color": "#4B2E83"},
+    {"id": "external_assets", "label": "External Assets", "color": "#1E3A5F"},
+    {"id": "admin_assets", "label": "Admin_Assets", "color": "#8B3A3A"},
 ]
 
 DEMO_ROWS = [
-    ("employee_devices", "Laptop — Finance-01"),
-    ("employee_devices", "Laptop — HR-02"),
-    ("employee_devices", "Monitor — Desk A"),
-    ("employee_devices", "Phone — Sales lead"),
-    ("network", "Core switch — DC1"),
-    ("network", "Firewall — edge"),
-    ("cloud_assets", "AWS account — prod"),
-    ("infodesk_apps", "Service desk portal"),
-    ("third_party", "O365 tenant"),
+    ("employee_assets", "Laptop — Finance-01"),
+    ("employee_assets", "Laptop — HR-02"),
+    ("employee_assets", "Monitor — Desk A"),
+    ("employee_assets", "Phone — Sales lead"),
+    ("internal_assets", "Core switch — DC1"),
+    ("internal_assets", "Firewall — edge"),
+    ("external_assets", "AWS account — prod"),
+    ("internal_assets", "Service desk portal"),
+    ("admin_assets", "Jump host — admin"),
 ]
+
+
+def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
+    """One-time: 5 legacy categories -> 4 new ones (SQLite CHECK cannot update in place)."""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='assets'"
+    ).fetchone()
+    if not row or not row[0]:
+        return
+    ddl = row[0]
+    if "employee_assets" in ddl and "employee_devices" not in ddl:
+        return
+    if "employee_devices" not in ddl:
+        return
+    conn.executescript(
+        """
+    CREATE TABLE assets__new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL CHECK (category IN (
+        'employee_assets', 'internal_assets', 'external_assets', 'admin_assets'
+      )),
+      serial_number TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    INSERT INTO assets__new (id, name, category, serial_number, notes, created_at)
+    SELECT id, name,
+      CASE category
+        WHEN 'employee_devices' THEN 'employee_assets'
+        WHEN 'network' THEN 'internal_assets'
+        WHEN 'cloud_assets' THEN 'external_assets'
+        WHEN 'infodesk_apps' THEN 'internal_assets'
+        WHEN 'third_party' THEN 'admin_assets'
+        ELSE 'admin_assets'
+      END,
+      serial_number, notes, created_at
+    FROM assets;
+    DROP TABLE assets;
+    ALTER TABLE assets__new RENAME TO assets;
+    CREATE INDEX IF NOT EXISTS idx_assets_category ON assets (category);
+    """
+    )
+    conn.commit()
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
     if not SCHEMA_PATH.is_file():
         raise FileNotFoundError(f"Missing {SCHEMA_PATH}")
+    migrate_legacy_assets_table(conn)
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
@@ -42,16 +87,20 @@ def seed_if_empty(conn: sqlite3.Connection) -> None:
     names_by_cat: dict[str, list[str]] = {c["id"]: [] for c in CATEGORIES_META}
     for cat, name in DEMO_ROWS:
         names_by_cat[cat].append(name)
-    for i in range(max(0, 14 - len(names_by_cat["employee_devices"]))):
-        names_by_cat["employee_devices"].append(f"Laptop — auto {i + 1}")
-    while len(names_by_cat["network"]) < 4:
-        names_by_cat["network"].append(f"Switch — rack {len(names_by_cat['network']) + 1}")
-    while len(names_by_cat["cloud_assets"]) < 3:
-        names_by_cat["cloud_assets"].append(f"S3 bucket — set {len(names_by_cat['cloud_assets']) + 1}")
-    while len(names_by_cat["infodesk_apps"]) < 4:
-        names_by_cat["infodesk_apps"].append(f"Infodesk app — {len(names_by_cat['infodesk_apps']) + 1}")
-    while len(names_by_cat["third_party"]) < 5:
-        names_by_cat["third_party"].append(f"Vendor SaaS — {len(names_by_cat['third_party']) + 1}")
+    for i in range(max(0, 14 - len(names_by_cat["employee_assets"]))):
+        names_by_cat["employee_assets"].append(f"Laptop — auto {i + 1}")
+    while len(names_by_cat["internal_assets"]) < 4:
+        names_by_cat["internal_assets"].append(
+            f"Internal asset — {len(names_by_cat['internal_assets']) + 1}"
+        )
+    while len(names_by_cat["external_assets"]) < 3:
+        names_by_cat["external_assets"].append(
+            f"External asset — {len(names_by_cat['external_assets']) + 1}"
+        )
+    while len(names_by_cat["admin_assets"]) < 4:
+        names_by_cat["admin_assets"].append(
+            f"Admin asset — {len(names_by_cat['admin_assets']) + 1}"
+        )
 
     for cat, names in names_by_cat.items():
         for name in names:

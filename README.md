@@ -6,7 +6,7 @@ Repo: [github.com/bigb787/Employee_Asset_Management_Register](https://github.com
 
 ## Dashboard (SQLite + JSON export)
 
-- **Schema:** `data/schema.sql` — table `assets` with `category` (employee_devices, network, cloud_assets, infodesk_apps, third_party).
+- **Schema:** `data/schema.sql` — table `assets` with `category`: `employee_assets`, `internal_assets`, `external_assets`, `admin_assets` (chips: **Employee_Assets**, **Internal Assets**, **External Assets**, **Admin_Assets**).
 - **Build JSON:** from repo root run  
   `python scripts/build_dashboard_data.py`  
   (creates/updates `data/assets.db` with demo rows if empty, writes `static/dashboard-data.json`).

@@ -4,33 +4,27 @@
   "generated_by": "app.dashboard_json",
   "categories": [
     {
-      "id": "employee_devices",
-      "label": "Employee devices",
+      "id": "employee_assets",
+      "label": "Employee_Assets",
       "color": "#185FA5",
       "count": 14
     },
     {
-      "id": "network",
-      "label": "Network",
+      "id": "internal_assets",
+      "label": "Internal Assets",
       "color": "#4B2E83",
-      "count": 4
+      "count": 8
     },
     {
-      "id": "cloud_assets",
-      "label": "Cloud assets",
+      "id": "external_assets",
+      "label": "External Assets",
       "color": "#1E3A5F",
       "count": 3
     },
     {
-      "id": "infodesk_apps",
-      "label": "Infodesk apps",
+      "id": "admin_assets",
+      "label": "Admin_Assets",
       "color": "#8B3A3A",
-      "count": 4
-    },
-    {
-      "id": "third_party",
-      "label": "3rd party software",
-      "color": "#9B7EBD",
       "count": 5
     }
   ],
@@ -38,210 +32,210 @@
     {
       "id": 30,
       "name": "Vendor SaaS \u2014 5",
-      "category": "third_party",
+      "category": "admin_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 29,
       "name": "Vendor SaaS \u2014 4",
-      "category": "third_party",
+      "category": "admin_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 28,
       "name": "Vendor SaaS \u2014 3",
-      "category": "third_party",
+      "category": "admin_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 27,
       "name": "Vendor SaaS \u2014 2",
-      "category": "third_party",
+      "category": "admin_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 26,
       "name": "O365 tenant",
-      "category": "third_party",
+      "category": "admin_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 25,
       "name": "Infodesk app \u2014 4",
-      "category": "infodesk_apps",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 24,
       "name": "Infodesk app \u2014 3",
-      "category": "infodesk_apps",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 23,
       "name": "Infodesk app \u2014 2",
-      "category": "infodesk_apps",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 22,
       "name": "Service desk portal",
-      "category": "infodesk_apps",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 21,
       "name": "S3 bucket \u2014 set 3",
-      "category": "cloud_assets",
+      "category": "external_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 20,
       "name": "S3 bucket \u2014 set 2",
-      "category": "cloud_assets",
+      "category": "external_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 19,
       "name": "AWS account \u2014 prod",
-      "category": "cloud_assets",
+      "category": "external_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 18,
       "name": "Switch \u2014 rack 4",
-      "category": "network",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 17,
       "name": "Switch \u2014 rack 3",
-      "category": "network",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 16,
       "name": "Firewall \u2014 edge",
-      "category": "network",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 15,
       "name": "Core switch \u2014 DC1",
-      "category": "network",
+      "category": "internal_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 14,
       "name": "Laptop \u2014 auto 10",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 13,
       "name": "Laptop \u2014 auto 9",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 12,
       "name": "Laptop \u2014 auto 8",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 11,
       "name": "Laptop \u2014 auto 7",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 10,
       "name": "Laptop \u2014 auto 6",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 9,
       "name": "Laptop \u2014 auto 5",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 8,
       "name": "Laptop \u2014 auto 4",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 7,
       "name": "Laptop \u2014 auto 3",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 6,
       "name": "Laptop \u2014 auto 2",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 5,
       "name": "Laptop \u2014 auto 1",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 4,
       "name": "Phone \u2014 Sales lead",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 3,
       "name": "Monitor \u2014 Desk A",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 2,
       "name": "Laptop \u2014 HR-02",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     },
     {
       "id": 1,
       "name": "Laptop \u2014 Finance-01",
-      "category": "employee_devices",
+      "category": "employee_assets",
       "serial_number": null,
       "created_at": "2026-04-05 05:10:33"
     }
