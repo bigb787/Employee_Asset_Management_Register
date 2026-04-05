@@ -605,7 +605,7 @@
         });
         document.getElementById("btnAdd").addEventListener("click", function () {
           alert(
-            "Click a category chip that has detail tables (e.g. Employee_Devices, Networking), then pick a tab and use + Add row."
+            "Click a category chip first. For Laptop, Networking, UPS, etc.: use + Add row in the panel. For GatePass or InfoDesk_Leavers: same — open that chip, then + Add row."
           );
         });
         document.getElementById("btnMenu").addEventListener("click", function () {
@@ -613,6 +613,9 @@
         });
 
         var REG_API = "/api/register-tables";
+        var SUMMARY_API = "/api/summary-assets";
+        var detailMode = null;
+        var summaryCategory = null;
         var regPanel = document.getElementById("registerDetailPanel");
         var regTableScroll = document.getElementById("registerTableScroll");
         var regTabs = document.getElementById("registerTabs");
@@ -639,6 +642,10 @@
             if (regPanels[i].category_id === categoryId) return regPanels[i];
           }
           return null;
+        }
+
+        function isSummaryOnlyCategory(categoryId) {
+          return categoryId === "gatepass" || categoryId === "infodesk_leavers";
         }
 
         function renderRegisterTabs(panel) {
@@ -776,6 +783,8 @@
         async function openRegisterPanel(categoryId, fromChip) {
           var panel = panelForCategory(categoryId);
           if (!panel || !panel.tabs || !panel.tabs.length) return;
+          detailMode = "register";
+          summaryCategory = null;
           document.querySelectorAll(".chip-selected").forEach(function (c) {
             c.classList.remove("chip-selected");
           });
@@ -789,8 +798,126 @@
           regPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
 
+        async function openSummaryPanel(categoryId, fromChip) {
+          detailMode = "summary";
+          summaryCategory = categoryId;
+          document.querySelectorAll(".chip-selected").forEach(function (c) {
+            c.classList.remove("chip-selected");
+          });
+          if (fromChip) fromChip.classList.add("chip-selected");
+          document.getElementById("registerPanelTitle").textContent =
+            categoryLabel(categoryId) + " — summary list";
+          regTabs.innerHTML = "";
+          regTabs.classList.add("ea-tabs--hidden");
+          regPanel.style.display = "block";
+          await loadSummaryTable(categoryId);
+          regPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        async function loadSummaryTable(categoryId) {
+          regTableScroll.innerHTML = '<p class="empty" style="padding:20px">Loading…</p>';
+          try {
+            var r = await fetch(absApi(SUMMARY_API + "/" + categoryId + "?_=" + Date.now()), {
+              cache: "no-store",
+            });
+            if (!r.ok) {
+              var t = await r.text();
+              throw new Error("summary HTTP " + r.status + ": " + t.slice(0, 400));
+            }
+            var data = await r.json();
+            var rows = data.rows || [];
+            var html =
+              "<table><thead><tr><th>ID</th><th>Actions</th><th>Name</th><th>Serial number</th><th>Notes</th><th>created_at</th></tr></thead><tbody>";
+            rows.forEach(function (row) {
+              html += "<tr><td>" + escapeHtml(String(row.id)) + '</td><td class="ea-actions">';
+              html +=
+                '<button type="button" class="btn btn-sm sum-edit" data-id="' +
+                row.id +
+                '">Edit</button>';
+              html +=
+                '<button type="button" class="btn btn-sm btn-danger sum-del" data-id="' +
+                row.id +
+                '">Delete</button></td>';
+              html +=
+                "<td>" +
+                escapeHtml(row.name || "—") +
+                "</td><td>" +
+                escapeHtml(row.serial_number || "—") +
+                "</td><td>" +
+                escapeHtml(row.notes || "—") +
+                "</td><td>" +
+                escapeHtml(row.created_at || "—") +
+                "</td></tr>";
+            });
+            html += "</tbody></table>";
+            if (!rows.length) {
+              html =
+                '<p class="empty" style="padding:20px">No rows yet. Click <strong>+ Add row</strong>.</p>';
+            }
+            regTableScroll.innerHTML = html;
+            regTableScroll.querySelectorAll(".sum-edit").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                openSummaryModal(parseInt(btn.getAttribute("data-id"), 10));
+              });
+            });
+            regTableScroll.querySelectorAll(".sum-del").forEach(function (btn) {
+              btn.addEventListener("click", async function () {
+                var id = parseInt(btn.getAttribute("data-id"), 10);
+                if (!confirm("Delete asset " + id + "?")) return;
+                var dr = await fetch(absApi(SUMMARY_API + "/row/" + id), { method: "DELETE" });
+                if (!dr.ok) alert("Delete failed: " + dr.status);
+                else {
+                  await loadSummaryTable(categoryId);
+                  load();
+                }
+              });
+            });
+          } catch (e) {
+            var msg = e && e.message ? e.message : String(e);
+            regTableScroll.innerHTML =
+              '<p class="empty" style="padding:20px;color:#b91c1c">' + escapeHtml(msg) + "</p>";
+          }
+        }
+
+        function summaryFormShell() {
+          return (
+            '<label class="ea-field"><span>Name</span><input type="text" name="name" autocomplete="off" required /></label>' +
+            '<label class="ea-field"><span>Serial number</span><input type="text" name="serial_number" autocomplete="off" /></label>' +
+            '<label class="ea-field"><span>Notes</span><input type="text" name="notes" autocomplete="off" /></label>'
+          );
+        }
+
+        async function openSummaryModal(rowId) {
+          if (!summaryCategory) return;
+          regEditingId = rowId == null ? null : rowId;
+          document.getElementById("registerModalTitle").textContent =
+            rowId == null ? "Add " + categoryLabel(summaryCategory) : "Edit asset #" + rowId;
+          var form = document.getElementById("registerForm");
+          form.innerHTML = summaryFormShell();
+          if (rowId != null) {
+            var r = await fetch(
+              absApi(SUMMARY_API + "/" + summaryCategory + "?_=" + Date.now()),
+              { cache: "no-store" }
+            );
+            var data = await r.json();
+            var row = (data.rows || []).find(function (x) {
+              return x.id === rowId;
+            });
+            if (row) {
+              form.querySelector('input[name="name"]').value = row.name != null ? row.name : "";
+              form.querySelector('input[name="serial_number"]').value =
+                row.serial_number != null ? row.serial_number : "";
+              form.querySelector('input[name="notes"]').value = row.notes != null ? row.notes : "";
+            }
+          }
+          document.getElementById("registerModal").style.display = "flex";
+          document.getElementById("registerModal").setAttribute("aria-hidden", "false");
+        }
+
         function closeRegisterPanel() {
           regPanel.style.display = "none";
+          detailMode = null;
+          summaryCategory = null;
           document.querySelectorAll(".chip-selected").forEach(function (c) {
             c.classList.remove("chip-selected");
           });
@@ -805,12 +932,18 @@
               var m = e && e.message ? e.message : String(e);
               showErr("Register: " + m);
             });
+          } else if (isSummaryOnlyCategory(id)) {
+            openSummaryPanel(id, chip).catch(function (e) {
+              var m = e && e.message ? e.message : String(e);
+              showErr("Summary: " + m);
+            });
           } else {
-            alert("Detail tables for this category are not set up yet.");
+            alert("This category is not configured.");
           }
         });
 
         regTabs.addEventListener("click", function (ev) {
+          if (detailMode !== "register") return;
           var tab = ev.target.closest(".ea-tab");
           if (!tab) return;
           var kind = tab.getAttribute("data-reg-kind");
@@ -869,7 +1002,8 @@
         }
 
         document.getElementById("registerAddBtn").addEventListener("click", function () {
-          openRegModal(regCurrentKind, null);
+          if (detailMode === "summary") openSummaryModal(null);
+          else openRegModal(regCurrentKind, null);
         });
 
         document.getElementById("registerModalCancel").addEventListener("click", closeRegModal);
@@ -883,6 +1017,29 @@
           fd.forEach(function (v, k) {
             body[k] = v;
           });
+          if (detailMode === "summary" && summaryCategory) {
+            var url, method;
+            if (regEditingId == null) {
+              url = absApi(SUMMARY_API + "/" + summaryCategory);
+              method = "POST";
+            } else {
+              url = absApi(SUMMARY_API + "/row/" + regEditingId);
+              method = "PUT";
+            }
+            var sr = await fetch(url, {
+              method: method,
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            if (!sr.ok) {
+              alert("Save failed: " + sr.status);
+              return;
+            }
+            closeRegModal();
+            await loadSummaryTable(summaryCategory);
+            load();
+            return;
+          }
           var kind = regModalKind;
           var url, method;
           if (regEditingId == null) {

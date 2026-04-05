@@ -18,6 +18,7 @@ from eamr.database import DB_PATH, get_connection, init_db
 from eamr.register_ddl import ensure_register_tables
 from eamr.register_schema import register_bootstrap_dict
 from eamr.register_tables_api import router as register_tables_router
+from eamr.summary_assets_api import router as summary_assets_router
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "static"
@@ -39,6 +40,7 @@ def api_register_tables_meta():
 
 
 app.include_router(register_tables_router, prefix="/api/register-tables")
+app.include_router(summary_assets_router, prefix="/api/summary-assets")
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
 
 

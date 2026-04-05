@@ -26,6 +26,9 @@ CATEGORIES_META = [
 ]
 
 EXPECTED_CATEGORY_IDS = frozenset(c["id"] for c in CATEGORIES_META)
+
+# Chips that use the main `assets` table for CRUD (not register-tables/* grids).
+SUMMARY_ONLY_CATEGORY_IDS = frozenset({"gatepass", "infodesk_leavers"})
 _LEGACY_CHIP_IDS = frozenset(
     {
         "network",
