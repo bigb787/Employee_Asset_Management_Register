@@ -1,7 +1,0 @@
-.terraform/
-*.tfstate
-*.tfstate.*
-crash.log
-*.pem
-terraform.tfvars
-asset-register.pub
