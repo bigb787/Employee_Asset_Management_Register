@@ -49,6 +49,14 @@
         font-size: 0.95rem;
         color: var(--muted);
       }
+      .ui-verify {
+        margin: 10px 0 0;
+        font-size: 0.7rem;
+        line-height: 1.35;
+        color: #64748b;
+        max-width: 42rem;
+        word-break: break-word;
+      }
       .header-actions {
         display: flex;
         align-items: center;
@@ -97,9 +105,10 @@
       }
       .chip-strip {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 12px;
-        overflow-x: auto;
+        overflow-x: visible;
         padding: 12px 4px 14px;
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
@@ -213,6 +222,7 @@
     </style>
   </head>
   <body>
+    <!-- ui-categories: {% for c in categories %}{{ c.id }}{% if not loop.last %},{% endif %}{% endfor %} -->
     <div class="page">
       <div id="err" class="err" style="display: none"></div>
 
@@ -220,6 +230,7 @@
         <div class="titles">
           <h1 id="dashTitle">Asset register</h1>
           <p id="dashSubtitle">All company assets in one place</p>
+          <p id="uiVerify" class="ui-verify">{{ ui_verify }}</p>
         </div>
         <div class="header-actions">
           <button type="button" class="btn" id="btnExport" title="Download CSV">
@@ -233,7 +244,15 @@
       </header>
 
       <div class="chip-strip-wrap">
-        <div class="chip-strip" id="chipStrip" aria-label="Categories"></div>
+        <div class="chip-strip" id="chipStrip" aria-label="Categories">
+          {% for c in categories %}
+          <div class="chip" data-category-id="{{ c.id }}">
+            <span class="chip-dot" style="background:{{ c.color }}"></span>
+            <span>{{ c.label }}</span>
+            <span class="chip-count">{{ c.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
         <div class="chip-nav" aria-hidden="true">
           <button type="button" id="chipScrollL" title="Scroll left">◀</button>
           <button type="button" id="chipScrollR" title="Scroll right">▶</button>
@@ -247,6 +266,8 @@
         </div>
       </section>
     </div>
+
+    <script type="application/json" id="categories-bootstrap">{{ categories_bootstrap_json | safe }}</script>
 
     <script>
       (function () {
@@ -277,15 +298,49 @@
           return map[id] || id;
         }
 
+        var categoriesBootstrap = [];
+        try {
+          var bootEl = document.getElementById("categories-bootstrap");
+          if (bootEl && bootEl.textContent) {
+            categoriesBootstrap = JSON.parse(bootEl.textContent);
+          }
+        } catch (e1) {}
+
+        function mergeCategories(apiCats) {
+          if (!categoriesBootstrap.length) {
+            return apiCats || [];
+          }
+          var apiById = {};
+          (apiCats || []).forEach(function (c) {
+            apiById[c.id] = c;
+          });
+          return categoriesBootstrap.map(function (b) {
+            var a = apiById[b.id];
+            return {
+              id: b.id,
+              label: b.label,
+              color: b.color,
+              count:
+                a && a.count != null
+                  ? a.count
+                  : b.count != null
+                    ? b.count
+                    : 0,
+            };
+          });
+        }
+
         function render(data) {
           if (data.title) document.getElementById("dashTitle").textContent = data.title;
           if (data.subtitle)
             document.getElementById("dashSubtitle").textContent = data.subtitle;
 
+          var categories = mergeCategories(data.categories);
           chipStrip.innerHTML = "";
-          (data.categories || []).forEach(function (c) {
+          categories.forEach(function (c) {
             var el = document.createElement("div");
             el.className = "chip";
+            el.setAttribute("data-category-id", c.id);
             el.innerHTML =
               '<span class="chip-dot" style="background:' +
               (c.color || "#888") +
@@ -331,13 +386,18 @@
 
         async function load() {
           try {
-            var url = "/api/dashboard-data";
-            var res = await fetch(url, { credentials: "same-origin" });
+            var url = "/api/dashboard-data?_=" + Date.now();
+            var res = await fetch(url, {
+              credentials: "same-origin",
+              cache: "no-store",
+            });
             if (!res.ok) throw new Error("API " + res.status);
             render(await res.json());
           } catch (e) {
             try {
-              var r2 = await fetch("/static/dashboard-data.json", { cache: "no-store" });
+              var r2 = await fetch("/static/dashboard-data.json?_=" + Date.now(), {
+                cache: "no-store",
+              });
               if (!r2.ok) throw new Error("static JSON missing");
               render(await r2.json());
             } catch (e2) {

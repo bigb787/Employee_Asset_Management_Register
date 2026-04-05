@@ -15,12 +15,16 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    """Apply migrations + schema (same as build script) so chips match `CATEGORIES_META`."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if not SCHEMA_PATH.is_file():
         return
     conn = get_connection()
     try:
-        conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        from app.dashboard_json import ensure_schema, seed_if_empty
+
+        ensure_schema(conn)
+        seed_if_empty(conn)
         conn.commit()
     finally:
         conn.close()

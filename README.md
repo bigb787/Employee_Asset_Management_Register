@@ -20,19 +20,21 @@ python -c "from app.database import init_db; init_db()"
 python scripts/build_dashboard_data.py
 ```
 
-Start the server (use **`python -m uvicorn`** on Windows if the `uvicorn` command is not found):
+**Windows:** the `uvicorn` command is often not on your PATH. Use one of these from the **project root** instead:
+
+- **PowerShell:** `.\run.ps1`
+- **Command Prompt:** `run.bat`
+- **Either shell:** `python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`  
+  (if `ModuleNotFoundError: uvicorn`, run `pip install -r requirements.txt` first)
+
+**Linux / macOS** (or Windows when `Scripts` is on PATH):
 
 ```bash
-# Linux / macOS, or Windows when Scripts is on PATH:
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-From the **project root**, set `PYTHONPATH` to the current folder if imports fail:
-
-**PowerShell:** `$env:PYTHONPATH = (Get-Location).Path`  
-Then: `python -m uvicorn app.main:app --host 0.0.0.0 --port 8000`
-
-Or run: **`.\run.ps1`**
+If imports fail, set `PYTHONPATH` to the project root. **PowerShell:**  
+`$env:PYTHONPATH = (Get-Location).Path` then run the `python -m uvicorn` line above.
 
 Open **http://127.0.0.1:8000/** — data loads from **`/api/dashboard-data`** (live SQLite) with fallback to **`/static/dashboard-data.json`**.
 
