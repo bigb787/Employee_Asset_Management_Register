@@ -14,9 +14,9 @@ CATEGORIES_META = [
     {"id": "internal_assets", "label": "Internal Assets", "color": "#4B2E83"},
     {"id": "external_assets", "label": "External Assets", "color": "#1E3A5F"},
     {"id": "cloud_assets", "label": "Cloud_Assets", "color": "#0F766E"},
+    {"id": "admin_assets", "label": "Admin_Assets", "color": "#8B3A3A"},
     {"id": "gatepass", "label": "GatePass", "color": "#B45309"},
     {"id": "infodesk_leavers", "label": "InfoDesk_Leavers", "color": "#7C3AED"},
-    {"id": "admin_assets", "label": "Admin_Assets", "color": "#8B3A3A"},
 ]
 
 EXPECTED_CATEGORY_IDS = frozenset(c["id"] for c in CATEGORIES_META)

@@ -28,6 +28,12 @@
       "count": 0
     },
     {
+      "id": "admin_assets",
+      "label": "Admin_Assets",
+      "color": "#8B3A3A",
+      "count": 5
+    },
+    {
       "id": "gatepass",
       "label": "GatePass",
       "color": "#B45309",
@@ -38,12 +44,6 @@
       "label": "InfoDesk_Leavers",
       "color": "#7C3AED",
       "count": 0
-    },
-    {
-      "id": "admin_assets",
-      "label": "Admin_Assets",
-      "color": "#8B3A3A",
-      "count": 5
     }
   ],
   "items": [
