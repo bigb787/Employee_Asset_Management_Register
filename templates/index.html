@@ -102,21 +102,27 @@
       .chip-strip-wrap {
         margin-bottom: 24px;
       }
+      .chip-section-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 10px;
+      }
       .chip-strip {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 12px;
-        overflow-x: visible;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+        gap: 10px;
         padding: 12px 4px 14px;
         border-bottom: 1px solid var(--border);
       }
       .chip {
-        flex: 0 0 auto;
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 10px 16px;
+        padding: 10px 14px;
+        min-height: 44px;
         background: var(--card);
         border-radius: 999px;
         border: 1px solid var(--border);
@@ -213,6 +219,7 @@
       </header>
 
       <div class="chip-strip-wrap">
+        <div class="chip-section-label" id="chipSectionLabel">Categories (7)</div>
         <div class="chip-strip" id="chipStrip" aria-label="Categories">
           {% for c in categories %}
           <div class="chip" data-category-id="{{ c.id }}">
@@ -233,6 +240,7 @@
     </div>
 
     <script type="application/json" id="categories-bootstrap">{{ categories_bootstrap_json | safe }}</script>
+    <script type="application/json" id="chip-defs">{{ chip_defs_json | safe }}</script>
 
     <script>
       (function () {
@@ -279,24 +287,46 @@
           }
         } catch (e1) {}
 
-        function mergeCategories(apiCats) {
-          if (!categoriesBootstrap.length) {
-            return apiCats || [];
+        var CHIP_DEFS_FALLBACK = [
+          { id: "employee_assets", color: "#185FA5" },
+          { id: "internal_assets", color: "#4B2E83" },
+          { id: "external_assets", color: "#1E3A5F" },
+          { id: "cloud_assets", color: "#0F766E" },
+          { id: "admin_assets", color: "#8B3A3A" },
+          { id: "gatepass", color: "#B45309" },
+          { id: "infodesk_leavers", color: "#7C3AED" },
+        ];
+
+        var chipDefsOrdered = [];
+        try {
+          var defEl = document.getElementById("chip-defs");
+          if (defEl && defEl.textContent) {
+            chipDefsOrdered = JSON.parse(defEl.textContent.trim());
           }
+        } catch (e2) {}
+        if (!chipDefsOrdered || chipDefsOrdered.length < 7) {
+          chipDefsOrdered = CHIP_DEFS_FALLBACK;
+        }
+
+        function chipsForStrip(apiCats) {
           var apiById = {};
           (apiCats || []).forEach(function (c) {
             apiById[c.id] = c;
           });
-          return categoriesBootstrap.map(function (b) {
-            var a = apiById[b.id];
+          var bootById = {};
+          categoriesBootstrap.forEach(function (b) {
+            bootById[b.id] = b;
+          });
+          return chipDefsOrdered.map(function (def) {
+            var a = apiById[def.id];
+            var b = bootById[def.id];
             return {
-              id: b.id,
-              label: b.label,
-              color: b.color,
+              id: def.id,
+              color: (a && a.color) || (b && b.color) || def.color || "#888",
               count:
                 a && a.count != null
                   ? a.count
-                  : b.count != null
+                  : b && b.count != null
                     ? b.count
                     : 0,
             };
@@ -308,7 +338,12 @@
           if (data.subtitle)
             document.getElementById("dashSubtitle").textContent = data.subtitle;
 
-          var categories = mergeCategories(data.categories);
+          var labelEl = document.getElementById("chipSectionLabel");
+          if (labelEl) {
+            labelEl.textContent = "Categories (" + chipDefsOrdered.length + ")";
+          }
+
+          var categories = chipsForStrip(data.categories);
           chipStrip.innerHTML = "";
           categories.forEach(function (c) {
             var el = document.createElement("div");

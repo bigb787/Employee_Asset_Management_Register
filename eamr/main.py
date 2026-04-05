@@ -63,6 +63,8 @@ async def index(request: Request):
     )
     cats_json = json.dumps(cats)
     bootstrap_b64 = base64.b64encode(cats_json.encode("utf-8")).decode("ascii")
+    chip_defs = [{"id": c["id"], "color": c["color"]} for c in CATEGORIES_META]
+    chip_defs_json = json.dumps(chip_defs)
     return templates.TemplateResponse(
         "index.html",
         {
@@ -70,6 +72,7 @@ async def index(request: Request):
             "categories": cats,
             "categories_bootstrap_json": cats_json,
             "bootstrap_b64": bootstrap_b64,
+            "chip_defs_json": chip_defs_json,
             "ui_verify": ui_verify,
             "html_title": f"Asset register ({len(cats)} categories · GatePass)",
         },
