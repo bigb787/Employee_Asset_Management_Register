@@ -1,4 +1,4 @@
--- Asset register — five category headers: Employee_Assets, Internal / External / Cloud / Admin Assets
+-- Asset register — category chips (see app/dashboard_json.py CATEGORIES_META)
 CREATE TABLE IF NOT EXISTS assets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS assets (
     'internal_assets',
     'external_assets',
     'cloud_assets',
-    'admin_assets'
+    'admin_assets',
+    'gatepass',
+    'infodesk_leavers'
   )),
   serial_number TEXT,
   notes TEXT,

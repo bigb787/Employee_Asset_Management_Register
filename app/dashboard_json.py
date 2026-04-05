@@ -15,7 +15,15 @@ CATEGORIES_META = [
     {"id": "external_assets", "label": "External Assets", "color": "#1E3A5F"},
     {"id": "cloud_assets", "label": "Cloud_Assets", "color": "#0F766E"},
     {"id": "admin_assets", "label": "Admin_Assets", "color": "#8B3A3A"},
+    {"id": "gatepass", "label": "GatePass", "color": "#B45309"},
+    {"id": "infodesk_leavers", "label": "InfoDesk_Leavers", "color": "#7C3AED"},
 ]
+
+
+def _sql_category_check_line() -> str:
+    inner = ", ".join(f"'{c['id']}'" for c in CATEGORIES_META)
+    return f"category TEXT NOT NULL CHECK (category IN ({inner}))"
+
 
 DEMO_ROWS = [
     ("employee_assets", "Laptop — Finance-01"),
@@ -28,6 +36,10 @@ DEMO_ROWS = [
     ("cloud_assets", "Azure subscription — dev"),
     ("internal_assets", "Service desk portal"),
     ("admin_assets", "Jump host — admin"),
+    ("gatepass", "Visitor gate pass — lobby kiosk"),
+    ("gatepass", "Contractor badge printer"),
+    ("infodesk_leavers", "Leaver checklist — HR workflow"),
+    ("infodesk_leavers", "Mailbox disable — automation"),
 ]
 
 
@@ -43,15 +55,13 @@ def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
         return
     if "employee_devices" not in ddl:
         return
+    check_line = _sql_category_check_line()
     conn.executescript(
-        """
+        f"""
     CREATE TABLE assets__new (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      category TEXT NOT NULL CHECK (category IN (
-        'employee_assets', 'internal_assets', 'external_assets',
-        'cloud_assets', 'admin_assets'
-      )),
+      {check_line},
       serial_number TEXT,
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -62,7 +72,7 @@ def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
         WHEN 'employee_devices' THEN 'employee_assets'
         WHEN 'network' THEN 'internal_assets'
         WHEN 'cloud_assets' THEN 'cloud_assets'
-        WHEN 'infodesk_apps' THEN 'internal_assets'
+        WHEN 'infodesk_apps' THEN 'infodesk_leavers'
         WHEN 'third_party' THEN 'admin_assets'
         ELSE 'admin_assets'
       END,
@@ -76,8 +86,8 @@ def migrate_legacy_assets_table(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def migrate_four_category_table_add_cloud(conn: sqlite3.Connection) -> None:
-    """SQLite CHECK cannot alter in place — widen 4-category table to include cloud_assets."""
+def migrate_assets_category_widen(conn: sqlite3.Connection) -> None:
+    """SQLite CHECK cannot alter in place — rebuild if ddl is missing any current category."""
     row = conn.execute(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name='assets'"
     ).fetchone()
@@ -86,19 +96,18 @@ def migrate_four_category_table_add_cloud(conn: sqlite3.Connection) -> None:
     ddl = row[0]
     if "employee_devices" in ddl:
         return
-    if "cloud_assets" in ddl:
+    for c in CATEGORIES_META:
+        if f"'{c['id']}'" not in ddl:
+            break
+    else:
         return
-    if "employee_assets" not in ddl:
-        return
+    check_line = _sql_category_check_line()
     conn.executescript(
-        """
+        f"""
     CREATE TABLE assets__new (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      category TEXT NOT NULL CHECK (category IN (
-        'employee_assets', 'internal_assets', 'external_assets',
-        'cloud_assets', 'admin_assets'
-      )),
+      {check_line},
       serial_number TEXT,
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -117,7 +126,7 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     if not SCHEMA_PATH.is_file():
         raise FileNotFoundError(f"Missing {SCHEMA_PATH}")
     migrate_legacy_assets_table(conn)
-    migrate_four_category_table_add_cloud(conn)
+    migrate_assets_category_widen(conn)
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
@@ -145,6 +154,14 @@ def seed_if_empty(conn: sqlite3.Connection) -> None:
     while len(names_by_cat["admin_assets"]) < 4:
         names_by_cat["admin_assets"].append(
             f"Admin asset — {len(names_by_cat['admin_assets']) + 1}"
+        )
+    while len(names_by_cat["gatepass"]) < 2:
+        names_by_cat["gatepass"].append(
+            f"Gate pass — {len(names_by_cat['gatepass']) + 1}"
+        )
+    while len(names_by_cat["infodesk_leavers"]) < 2:
+        names_by_cat["infodesk_leavers"].append(
+            f"InfoDesk leavers — {len(names_by_cat['infodesk_leavers']) + 1}"
         )
 
     for cat, names in names_by_cat.items():
