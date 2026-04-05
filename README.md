@@ -18,8 +18,21 @@ Repo: [github.com/bigb787/Employee_Asset_Management_Register](https://github.com
 pip install -r requirements.txt
 python -c "from app.database import init_db; init_db()"
 python scripts/build_dashboard_data.py
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+Start the server (use **`python -m uvicorn`** on Windows if the `uvicorn` command is not found):
+
+```bash
+# Linux / macOS, or Windows when Scripts is on PATH:
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+From the **project root**, set `PYTHONPATH` to the current folder if imports fail:
+
+**PowerShell:** `$env:PYTHONPATH = (Get-Location).Path`  
+Then: `python -m uvicorn app.main:app --host 0.0.0.0 --port 8000`
+
+Or run: **`.\run.ps1`**
 
 Open **http://127.0.0.1:8000/** — data loads from **`/api/dashboard-data`** (live SQLite) with fallback to **`/static/dashboard-data.json`**.
 
