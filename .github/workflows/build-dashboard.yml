@@ -9,6 +9,9 @@ on:
       - "data/**"
       - "scripts/build_dashboard_data.py"
       - "eamr/dashboard_json.py"
+      - "eamr/register_schema.py"
+      - "eamr/register_ddl.py"
+      - "eamr/register_tables_api.py"
       - "data/schema.sql"
       - ".github/workflows/build-dashboard.yml"
   workflow_dispatch:

@@ -6,7 +6,7 @@
     <title>{{ html_title }}</title>
     <script>
       window.__API_BASE__ = {{ api_base_js|safe }};
-      window.__EA_META_BOOTSTRAP__ = {{ employee_assets_meta_json|safe }};
+      window.__REGISTER_BOOTSTRAP__ = {{ register_bootstrap_json|safe }};
     </script>
     <style>
       :root {
@@ -311,7 +311,7 @@
         margin: 0 0 16px;
         font-size: 1.1rem;
       }
-      #eaForm {
+      #registerForm {
         overflow-y: auto;
         flex: 1;
         display: grid;
@@ -320,7 +320,7 @@
         padding-right: 4px;
       }
       @media (max-width: 560px) {
-        #eaForm {
+        #registerForm {
           grid-template-columns: 1fr;
         }
       }
@@ -381,7 +381,7 @@
       </header>
 
       <div class="chip-strip-wrap">
-        <div class="chip-section-label" id="chipSectionLabel">Categories (7)</div>
+        <div class="chip-section-label" id="chipSectionLabel">Categories (8)</div>
         <div class="chip-strip" id="chipStrip" aria-label="Categories">
           {% for c in categories %}
           <div class="chip chip--clickable" data-category-id="{{ c.id }}">
@@ -393,32 +393,33 @@
         </div>
       </div>
 
-      <section id="employeeAssetsPanel" class="panel ea-panel" style="display: none" aria-label="Employee assets detail">
+      <section
+        id="registerDetailPanel"
+        class="panel ea-panel"
+        style="display: none"
+        aria-label="Register detail tables"
+      >
         <div class="panel-head ea-panel-head">
-          <span>Employee_Assets — Laptop / Desktop / Monitor</span>
-          <button type="button" class="btn btn-sm" id="eaCloseBtn">Close</button>
+          <span id="registerPanelTitle">—</span>
+          <button type="button" class="btn btn-sm" id="registerCloseBtn">Close</button>
         </div>
-        <div class="ea-tabs" id="eaTabs" role="tablist">
-          <button type="button" class="ea-tab active" data-ea-kind="laptops" role="tab">Laptop</button>
-          <button type="button" class="ea-tab" data-ea-kind="desktops" role="tab">Desktop</button>
-          <button type="button" class="ea-tab" data-ea-kind="monitors" role="tab">Monitor</button>
-        </div>
+        <div class="ea-tabs" id="registerTabs" role="tablist"></div>
         <div class="ea-toolbar">
-          <button type="button" class="btn btn-primary btn-sm" id="eaAddBtn">+ Add row</button>
+          <button type="button" class="btn btn-primary btn-sm" id="registerAddBtn">+ Add row</button>
         </div>
-        <div class="ea-table-scroll" id="eaTableScroll">
+        <div class="ea-table-scroll" id="registerTableScroll">
           <p class="empty" style="padding: 20px">Loading…</p>
         </div>
       </section>
 
-      <div id="eaModal" class="ea-modal" style="display: none" aria-hidden="true">
-        <div class="ea-modal-backdrop" id="eaModalBackdrop"></div>
+      <div id="registerModal" class="ea-modal" style="display: none" aria-hidden="true">
+        <div class="ea-modal-backdrop" id="registerModalBackdrop"></div>
         <div class="ea-modal-box">
-          <h3 id="eaModalTitle">Add row</h3>
-          <form id="eaForm"></form>
+          <h3 id="registerModalTitle">Add row</h3>
+          <form id="registerForm"></form>
           <div class="ea-modal-actions">
-            <button type="button" class="btn" id="eaModalCancel">Cancel</button>
-            <button type="submit" class="btn btn-primary" form="eaForm">Save</button>
+            <button type="button" class="btn" id="registerModalCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" form="registerForm">Save</button>
           </div>
         </div>
       </div>
@@ -427,8 +428,8 @@
 
     <script type="application/json" id="categories-bootstrap">{{ categories_bootstrap_json | safe }}</script>
     <script type="application/json" id="chip-defs">{{ chip_defs_json | safe }}</script>
-    <script type="application/json" id="employee-assets-meta-bootstrap">
-      {{ employee_assets_meta_json | safe }}
+    <script type="application/json" id="register-bootstrap">
+      {{ register_bootstrap_json | safe }}
     </script>
 
     <script>
@@ -449,17 +450,14 @@
 
         function categoryLabel(id) {
           var map = {
-            employee_assets: "Employee_Assets",
-            internal_assets: "Internal Assets",
-            external_assets: "External Assets",
-            cloud_assets: "Cloud_Assets",
-            admin_assets: "Admin_Assets",
+            employee_devices: "Employee_Devices",
+            networking: "Networking",
+            cloud_asset_register: "Cloud Asset Register",
+            infodesk_applications: "Infodesk Applications",
+            third_party_softwares: "Third Party Softwares",
+            admin_devices: "Admin Devices",
             gatepass: "GatePass",
             infodesk_leavers: "InfoDesk_Leavers",
-            employee_devices: "Employee_Assets",
-            network: "Internal Assets",
-            infodesk_apps: "InfoDesk_Leavers",
-            third_party: "Admin_Assets",
           };
           return map[id] || id;
         }
@@ -481,11 +479,12 @@
         } catch (e1) {}
 
         var CHIP_DEFS_FALLBACK = [
-          { id: "employee_assets", color: "#185FA5" },
-          { id: "internal_assets", color: "#4B2E83" },
-          { id: "external_assets", color: "#1E3A5F" },
-          { id: "cloud_assets", color: "#0F766E" },
-          { id: "admin_assets", color: "#8B3A3A" },
+          { id: "employee_devices", color: "#185FA5" },
+          { id: "networking", color: "#4B2E83" },
+          { id: "cloud_asset_register", color: "#0F766E" },
+          { id: "infodesk_applications", color: "#0369A1" },
+          { id: "third_party_softwares", color: "#1E3A5F" },
+          { id: "admin_devices", color: "#8B3A3A" },
           { id: "gatepass", color: "#B45309" },
           { id: "infodesk_leavers", color: "#7C3AED" },
         ];
@@ -497,7 +496,7 @@
             chipDefsOrdered = JSON.parse(defEl.textContent.trim());
           }
         } catch (e2) {}
-        if (!chipDefsOrdered || chipDefsOrdered.length < 7) {
+        if (!chipDefsOrdered || chipDefsOrdered.length < 8) {
           chipDefsOrdered = CHIP_DEFS_FALLBACK;
         }
 
@@ -515,6 +514,10 @@
             var b = bootById[def.id];
             return {
               id: def.id,
+              label:
+                (a && a.label) ||
+                (b && b.label) ||
+                categoryLabel(def.id),
               color: (a && a.color) || (b && b.color) || def.color || "#888",
               count:
                 a && a.count != null
@@ -546,7 +549,7 @@
               '<span class="chip-dot" style="background:' +
               (c.color || "#888") +
               '"></span><span>' +
-              escapeHtml(categoryLabel(c.id)) +
+              escapeHtml(c.label || categoryLabel(c.id)) +
               '</span><span class="chip-count">' +
               (c.count != null ? c.count : 0) +
               "</span>";
@@ -588,25 +591,28 @@
           window.location.href = absApi("/api/assets/export.csv");
         });
         document.getElementById("btnAdd").addEventListener("click", function () {
-          alert("Click the Employee_Assets category chip, then use Laptop / Desktop / Monitor tabs and + Add row.");
+          alert(
+            "Click a category chip that has detail tables (e.g. Employee_Devices, Networking), then pick a tab and use + Add row."
+          );
         });
         document.getElementById("btnMenu").addEventListener("click", function () {
           alert("Menu: add settings / help links here.");
         });
 
-        /* —— Employee_Assets: Laptop / Desktop / Monitor tables —— */
-        var eaPanel = document.getElementById("employeeAssetsPanel");
-        var eaTableScroll = document.getElementById("eaTableScroll");
-        var eaTabs = document.getElementById("eaTabs");
-        var eaMeta = null;
-        var eaCurrentKind = "laptops";
-        var eaEditingId = null;
-        var eaModalKind = "laptops";
+        var REG_API = "/api/register-tables";
+        var regPanel = document.getElementById("registerDetailPanel");
+        var regTableScroll = document.getElementById("registerTableScroll");
+        var regTabs = document.getElementById("registerTabs");
+        var regKindsMeta = null;
+        var regPanels = [];
+        var regCurrentKind = "emp_laptop";
+        var regEditingId = null;
+        var regModalKind = "emp_laptop";
 
-        function readEaMetaBootstrap() {
-          var o = window.__EA_META_BOOTSTRAP__;
-          if (o && typeof o === "object" && o.laptops && o.laptops.columns) return o;
-          var el = document.getElementById("employee-assets-meta-bootstrap");
+        function readRegisterBootstrap() {
+          var o = window.__REGISTER_BOOTSTRAP__;
+          if (o && o.kinds && o.panels) return o;
+          var el = document.getElementById("register-bootstrap");
           if (!el) return null;
           try {
             return JSON.parse(el.textContent.trim());
@@ -615,45 +621,64 @@
           }
         }
 
-        async function fetchEaMeta(force) {
-          if (eaMeta && !force) return eaMeta;
-          var boot = readEaMetaBootstrap();
+        function panelForCategory(categoryId) {
+          for (var i = 0; i < regPanels.length; i++) {
+            if (regPanels[i].category_id === categoryId) return regPanels[i];
+          }
+          return null;
+        }
+
+        function renderRegisterTabs(panel) {
+          regTabs.innerHTML = "";
+          panel.tabs.forEach(function (tab, idx) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "ea-tab" + (idx === 0 ? " active" : "");
+            b.setAttribute("data-reg-kind", tab.kind);
+            b.setAttribute("role", "tab");
+            b.textContent = tab.label;
+            regTabs.appendChild(b);
+          });
+        }
+
+        async function fetchRegisterMeta(force) {
+          if (regKindsMeta && !force) return regKindsMeta;
+          var boot = readRegisterBootstrap();
           try {
-            var r = await fetch(absApi("/api/employee-assets/meta?_=" + Date.now()), {
+            var r = await fetch(absApi(REG_API + "/meta?_=" + Date.now()), {
               cache: "no-store",
             });
             if (r.ok) {
-              eaMeta = await r.json();
-              return eaMeta;
+              var full = await r.json();
+              regKindsMeta = full.kinds;
+              regPanels = full.panels || [];
+              return regKindsMeta;
             }
-          } catch (e) {
-            /* network / CORS — fall through to bootstrap */
-          }
-          if (boot) {
-            eaMeta = boot;
-            return eaMeta;
+          } catch (e) {}
+          if (boot && boot.kinds) {
+            regKindsMeta = boot.kinds;
+            regPanels = boot.panels || [];
+            return regKindsMeta;
           }
           throw new Error(
-            "Employee_Assets layout missing (page template incomplete). Hard-refresh (Ctrl+F5). " +
-              "If /api/employee-assets/meta returns 404, another app may be on this port — open /api/debug-ui."
+            "Register layout missing. Hard-refresh (Ctrl+F5). If /api/register-tables/meta 404s, check /api/debug-ui."
           );
         }
 
-        async function loadEaTable(kind) {
-          eaCurrentKind = kind;
-          eaTableScroll.innerHTML = '<p class="empty" style="padding:20px">Loading…</p>';
+        async function loadRegTable(kind) {
+          regCurrentKind = kind;
+          regTableScroll.innerHTML = '<p class="empty" style="padding:20px">Loading…</p>';
           try {
-            await fetchEaMeta(true);
-            var r = await fetch(
-              absApi("/api/employee-assets/" + kind + "?_=" + Date.now()),
-              { cache: "no-store" }
-            );
+            await fetchRegisterMeta(true);
+            var r = await fetch(absApi(REG_API + "/" + kind + "?_=" + Date.now()), {
+              cache: "no-store",
+            });
             if (!r.ok) {
               var errBody = await r.text();
               throw new Error(kind + " HTTP " + r.status + ": " + errBody.slice(0, 400));
             }
             var data = await r.json();
-            var cols = eaMeta[kind].columns;
+            var cols = regKindsMeta[kind].columns;
             var html =
               "<table><thead><tr><th>ID</th><th>Actions</th>";
             cols.forEach(function (c) {
@@ -685,26 +710,26 @@
             if (!data.rows || !data.rows.length) {
               html = '<p class="empty" style="padding:20px">No rows yet. Click <strong>+ Add row</strong>.</p>';
             }
-            eaTableScroll.innerHTML = html;
-            eaTableScroll.querySelectorAll(".ea-edit").forEach(function (btn) {
+            regTableScroll.innerHTML = html;
+            regTableScroll.querySelectorAll(".ea-edit").forEach(function (btn) {
               btn.addEventListener("click", function () {
-                openEaModal(kind, parseInt(btn.getAttribute("data-id"), 10));
+                openRegModal(kind, parseInt(btn.getAttribute("data-id"), 10));
               });
             });
-            eaTableScroll.querySelectorAll(".ea-del").forEach(function (btn) {
+            regTableScroll.querySelectorAll(".ea-del").forEach(function (btn) {
               btn.addEventListener("click", async function () {
                 var id = parseInt(btn.getAttribute("data-id"), 10);
                 if (!confirm("Delete row " + id + "?")) return;
-                var dr = await fetch(absApi("/api/employee-assets/" + kind + "/" + id), {
+                var dr = await fetch(absApi(REG_API + "/" + kind + "/" + id), {
                   method: "DELETE",
                 });
                 if (!dr.ok) alert("Delete failed: " + dr.status);
-                else loadEaTable(kind);
+                else loadRegTable(kind);
               });
             });
           } catch (e) {
             var msg = e && e.message ? e.message : String(e);
-            var cols = eaMeta && eaMeta[kind] && eaMeta[kind].columns;
+            var cols = regKindsMeta && regKindsMeta[kind] && regKindsMeta[kind].columns;
             if (cols && cols.length) {
               var colspan = 2 + cols.length + 2;
               var htmlErr =
@@ -718,9 +743,9 @@
                 '" style="padding:20px;color:#b91c1c;word-break:break-word">' +
                 escapeHtml(msg) +
                 "</td></tr></tbody></table>";
-              eaTableScroll.innerHTML = htmlErr;
+              regTableScroll.innerHTML = htmlErr;
             } else {
-              eaTableScroll.innerHTML =
+              regTableScroll.innerHTML =
                 '<p class="empty" style="padding:20px;color:#b91c1c;word-break:break-word">' +
                 escapeHtml(msg) +
                 "</p>";
@@ -728,25 +753,30 @@
           }
         }
 
-        function setEaTabActive(kind) {
-          eaTabs.querySelectorAll(".ea-tab").forEach(function (t) {
-            t.classList.toggle("active", t.getAttribute("data-ea-kind") === kind);
+        function setRegTabActive(kind) {
+          regTabs.querySelectorAll(".ea-tab").forEach(function (t) {
+            t.classList.toggle("active", t.getAttribute("data-reg-kind") === kind);
           });
         }
 
-        async function openEmployeeAssetsPanel(fromChip) {
+        async function openRegisterPanel(categoryId, fromChip) {
+          var panel = panelForCategory(categoryId);
+          if (!panel || !panel.tabs || !panel.tabs.length) return;
           document.querySelectorAll(".chip-selected").forEach(function (c) {
             c.classList.remove("chip-selected");
           });
           if (fromChip) fromChip.classList.add("chip-selected");
-          eaPanel.style.display = "block";
-          setEaTabActive(eaCurrentKind);
-          await loadEaTable(eaCurrentKind);
-          eaPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          document.getElementById("registerPanelTitle").textContent = panel.title;
+          renderRegisterTabs(panel);
+          regCurrentKind = panel.tabs[0].kind;
+          regPanel.style.display = "block";
+          setRegTabActive(regCurrentKind);
+          await loadRegTable(regCurrentKind);
+          regPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
 
-        function closeEmployeeAssetsPanel() {
-          eaPanel.style.display = "none";
+        function closeRegisterPanel() {
+          regPanel.style.display = "none";
           document.querySelectorAll(".chip-selected").forEach(function (c) {
             c.classList.remove("chip-selected");
           });
@@ -756,27 +786,29 @@
           var chip = ev.target.closest(".chip");
           if (!chip) return;
           var id = chip.getAttribute("data-category-id");
-          if (id === "employee_assets") {
-            openEmployeeAssetsPanel(chip).catch(function (e) {
+          if (panelForCategory(id)) {
+            openRegisterPanel(id, chip).catch(function (e) {
               var m = e && e.message ? e.message : String(e);
-              showErr("Employee_Assets: " + m);
+              showErr("Register: " + m);
             });
-          } else alert("Detail tables for this category are not set up yet.");
+          } else {
+            alert("Detail tables for this category are not set up yet.");
+          }
         });
 
-        eaTabs.addEventListener("click", function (ev) {
+        regTabs.addEventListener("click", function (ev) {
           var tab = ev.target.closest(".ea-tab");
           if (!tab) return;
-          var kind = tab.getAttribute("data-ea-kind");
+          var kind = tab.getAttribute("data-reg-kind");
           if (!kind) return;
-          setEaTabActive(kind);
-          loadEaTable(kind);
+          setRegTabActive(kind);
+          loadRegTable(kind);
         });
 
-        document.getElementById("eaCloseBtn").addEventListener("click", closeEmployeeAssetsPanel);
+        document.getElementById("registerCloseBtn").addEventListener("click", closeRegisterPanel);
 
-        function buildEaFormHtml(kind) {
-          var cols = eaMeta[kind].columns;
+        function buildRegFormHtml(kind) {
+          var cols = regKindsMeta[kind].columns;
           var html = "";
           cols.forEach(function (col) {
             html +=
@@ -789,19 +821,18 @@
           return html;
         }
 
-        async function openEaModal(kind, rowId) {
-          await fetchEaMeta(true);
-          eaModalKind = kind;
-          eaEditingId = rowId == null ? null : rowId;
-          document.getElementById("eaModalTitle").textContent =
-            rowId == null ? "Add " + kind.replace(/s$/, "") : "Edit row #" + rowId;
-          var form = document.getElementById("eaForm");
-          form.innerHTML = buildEaFormHtml(kind);
+        async function openRegModal(kind, rowId) {
+          await fetchRegisterMeta(true);
+          regModalKind = kind;
+          regEditingId = rowId == null ? null : rowId;
+          document.getElementById("registerModalTitle").textContent =
+            rowId == null ? "Add row" : "Edit row #" + rowId;
+          var form = document.getElementById("registerForm");
+          form.innerHTML = buildRegFormHtml(kind);
           if (rowId != null) {
-            var r = await fetch(
-              absApi("/api/employee-assets/" + kind + "?_=" + Date.now()),
-              { cache: "no-store" }
-            );
+            var r = await fetch(absApi(REG_API + "/" + kind + "?_=" + Date.now()), {
+              cache: "no-store",
+            });
             var data = await r.json();
             var row = (data.rows || []).find(function (x) {
               return x.id === rowId;
@@ -813,24 +844,24 @@
               });
             }
           }
-          document.getElementById("eaModal").style.display = "flex";
-          document.getElementById("eaModal").setAttribute("aria-hidden", "false");
+          document.getElementById("registerModal").style.display = "flex";
+          document.getElementById("registerModal").setAttribute("aria-hidden", "false");
         }
 
-        function closeEaModal() {
-          document.getElementById("eaModal").style.display = "none";
-          document.getElementById("eaModal").setAttribute("aria-hidden", "true");
-          eaEditingId = null;
+        function closeRegModal() {
+          document.getElementById("registerModal").style.display = "none";
+          document.getElementById("registerModal").setAttribute("aria-hidden", "true");
+          regEditingId = null;
         }
 
-        document.getElementById("eaAddBtn").addEventListener("click", function () {
-          openEaModal(eaCurrentKind, null);
+        document.getElementById("registerAddBtn").addEventListener("click", function () {
+          openRegModal(regCurrentKind, null);
         });
 
-        document.getElementById("eaModalCancel").addEventListener("click", closeEaModal);
-        document.getElementById("eaModalBackdrop").addEventListener("click", closeEaModal);
+        document.getElementById("registerModalCancel").addEventListener("click", closeRegModal);
+        document.getElementById("registerModalBackdrop").addEventListener("click", closeRegModal);
 
-        document.getElementById("eaForm").addEventListener("submit", async function (ev) {
+        document.getElementById("registerForm").addEventListener("submit", async function (ev) {
           ev.preventDefault();
           var form = ev.target;
           var fd = new FormData(form);
@@ -838,13 +869,13 @@
           fd.forEach(function (v, k) {
             body[k] = v;
           });
-          var kind = eaModalKind;
+          var kind = regModalKind;
           var url, method;
-          if (eaEditingId == null) {
-            url = absApi("/api/employee-assets/" + kind);
+          if (regEditingId == null) {
+            url = absApi(REG_API + "/" + kind);
             method = "POST";
           } else {
-            url = absApi("/api/employee-assets/" + kind + "/" + eaEditingId);
+            url = absApi(REG_API + "/" + kind + "/" + regEditingId);
             method = "PUT";
           }
           var r = await fetch(url, {
@@ -856,9 +887,14 @@
             alert("Save failed: " + r.status);
             return;
           }
-          closeEaModal();
-          loadEaTable(kind);
+          closeRegModal();
+          loadRegTable(kind);
         });
+
+        (function initRegisterPanels() {
+          var b = readRegisterBootstrap();
+          if (b && b.panels) regPanels = b.panels;
+        })();
 
         load();
       })();

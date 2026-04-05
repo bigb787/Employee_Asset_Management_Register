@@ -15,9 +15,9 @@ from starlette.requests import Request
 from eamr import dashboard_json as _dashboard_json
 from eamr.dashboard_json import CATEGORIES_META, build_payload, verify_categories_meta_or_die
 from eamr.database import DB_PATH, get_connection, init_db
-from eamr.employee_assets_api import router as employee_assets_router
-from eamr.employee_assets_ddl import ensure_employee_assets_tables
-from eamr.employee_assets_schema import meta_payload
+from eamr.register_ddl import ensure_register_tables
+from eamr.register_schema import register_bootstrap_dict
+from eamr.register_tables_api import router as register_tables_router
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "static"
@@ -26,19 +26,19 @@ _LOG = logging.getLogger("uvicorn.error")
 app = FastAPI(title="Employee Asset Management Register")
 
 
-@app.get("/api/employee-assets/meta")
-def api_employee_assets_meta():
-    """Column metadata for Laptop / Desktop / Monitor grids (registered on app root for reliable routing)."""
+@app.get("/api/register-tables/meta")
+def api_register_tables_meta():
+    """Kinds, columns, and panel/tab layout for register detail grids."""
     conn = get_connection()
     try:
-        ensure_employee_assets_tables(conn)
+        ensure_register_tables(conn)
         conn.commit()
     finally:
         conn.close()
-    return meta_payload()
+    return register_bootstrap_dict()
 
 
-app.include_router(employee_assets_router, prefix="/api/employee-assets")
+app.include_router(register_tables_router, prefix="/api/register-tables")
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
 
 
@@ -75,15 +75,14 @@ def categories_for_index() -> list[dict]:
 async def index(request: Request):
     cats = categories_for_index()
     ui_verify = (
-        f"This page is the NEW dashboard ({len(cats)} chips, includes GatePass and "
-        f"InfoDesk_Leavers). Project folder: {ROOT.name}. Python file: "
+        f"Dashboard ({len(cats)} category chips). Project folder: {ROOT.name}. Python: "
         f"{Path(_dashboard_json.__file__).resolve()}"
     )
     cats_json = json.dumps(cats)
     bootstrap_b64 = base64.b64encode(cats_json.encode("utf-8")).decode("ascii")
     chip_defs = [{"id": c["id"], "color": c["color"]} for c in CATEGORIES_META]
     chip_defs_json = json.dumps(chip_defs)
-    employee_assets_meta_json = json.dumps(meta_payload())
+    register_bootstrap_json = json.dumps(register_bootstrap_dict())
     base = str(request.base_url).rstrip("/")
     return templates.TemplateResponse(
         "index.html",
@@ -91,13 +90,13 @@ async def index(request: Request):
             "request": request,
             "api_base": base,
             "api_base_js": json.dumps(base),
-            "employee_assets_meta_json": employee_assets_meta_json,
+            "register_bootstrap_json": register_bootstrap_json,
             "categories": cats,
             "categories_bootstrap_json": cats_json,
             "bootstrap_b64": bootstrap_b64,
             "chip_defs_json": chip_defs_json,
             "ui_verify": ui_verify,
-            "html_title": f"Asset register ({len(cats)} categories · GatePass)",
+            "html_title": f"Asset register ({len(cats)} categories)",
         },
         headers={
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -125,7 +124,7 @@ def api_debug_ui(response: Response):
         "dashboard_json_py": str(Path(_dashboard_json.__file__).resolve()),
         "database_exists": DB_PATH.is_file(),
         "database_path": str(DB_PATH.resolve()) if DB_PATH.is_file() else None,
-        "read_me": "If this JSON shows 7 labels including GatePass but the home page shows Employee devices, port 8000 is a different old program. Use ASSET_REGISTER_PORT=8010 and run.ps1.",
+        "read_me": "If labels do not match the home page chips, another app may be on this port. Use ASSET_REGISTER_PORT=8010 and run.ps1.",
     }
 
 
