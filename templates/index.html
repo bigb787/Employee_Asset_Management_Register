@@ -109,7 +109,8 @@
         align-items: center;
         gap: 12px;
         overflow-x: visible;
-        padding: 12px 4px 14px;
+        /* Leave space so .chip-nav (absolute right) does not cover GatePass / InfoDesk chips */
+        padding: 12px 52px 14px 4px;
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
         border-bottom: 1px solid var(--border);
@@ -171,6 +172,9 @@
       @media (max-width: 640px) {
         .chip-nav {
           display: none;
+        }
+        .chip-strip {
+          padding-right: 4px;
         }
       }
       .panel {
