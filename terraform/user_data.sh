@@ -35,19 +35,18 @@ systemctl daemon-reload
 systemctl enable asset-register
 systemctl restart asset-register || systemctl start asset-register
 
-install -d /etc/nginx/sites-available /etc/nginx/sites-enabled
-cp "$APP_DIR/nginx.conf" /etc/nginx/sites-available/asset-register
-ln -sf /etc/nginx/sites-available/asset-register /etc/nginx/sites-enabled/asset-register
-rm -f /etc/nginx/sites-enabled/default
-rm -f /etc/nginx/conf.d/default.conf 2>/dev/null || true
-rm -f /etc/nginx/conf.d/default 2>/dev/null || true
-# Remove any conf.d snippet that still listens on 80 (loads before sites-enabled)
-for f in /etc/nginx/conf.d/*.conf; do
-  [ -f "$f" ] || continue
-  if grep -qE '^\s*listen\s+(\[::\]:)?80' "$f" 2>/dev/null; then
-    rm -f "$f"
-  fi
-done 2>/dev/null || true
+# Single-file main config avoids stock conf.d / sites-enabled welcome page winning on :80
+if [ -f "$APP_DIR/nginx/standalone-nginx.conf" ]; then
+  cp -f "$APP_DIR/nginx/standalone-nginx.conf" /etc/nginx/nginx.conf
+  rm -f /etc/nginx/sites-enabled/* 2>/dev/null || true
+  rm -f /etc/nginx/conf.d/*.conf 2>/dev/null || true
+else
+  install -d /etc/nginx/sites-available /etc/nginx/sites-enabled
+  cp "$APP_DIR/nginx.conf" /etc/nginx/sites-available/asset-register
+  ln -sf /etc/nginx/sites-available/asset-register /etc/nginx/sites-enabled/asset-register
+  rm -f /etc/nginx/sites-enabled/default
+  rm -f /etc/nginx/conf.d/default.conf 2>/dev/null || true
+fi
 systemctl enable nginx
 nginx -t
 systemctl restart nginx

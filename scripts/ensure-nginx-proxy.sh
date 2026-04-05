@@ -1,58 +1,48 @@
 #!/usr/bin/env bash
-# Run on the EC2 instance if you only see "Welcome to nginx" instead of the app.
-# Usage: sudo bash scripts/ensure-nginx-proxy.sh
+# Fixes "Welcome to nginx" by replacing the MAIN nginx.conf with a minimal proxy-only config
+# (stock Ubuntu loads conf.d before sites-enabled — defaults there win).
+#
+# Usage on EC2: sudo bash scripts/ensure-nginx-proxy.sh
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/home/ubuntu/Employee_Asset_Management_Register}"
+STANDALONE="$APP_DIR/nginx/standalone-nginx.conf"
 
-echo "==> Stop nginx briefly (clean listen on :80)"
-systemctl stop nginx || true
+if [[ ! -f "$STANDALONE" ]]; then
+  echo "ERROR: missing $STANDALONE — git pull and retry."
+  exit 1
+fi
 
-echo "==> Remove stock configs that serve the welcome page on port 80"
-# conf.d is often included BEFORE sites-enabled — default.conf wins first.
-rm -f /etc/nginx/conf.d/default.conf
-rm -f /etc/nginx/conf.d/default
-shopt -s nullglob
-for f in /etc/nginx/conf.d/*.conf; do
-  # Drop any leftover default-style server on 80 (dedicated app VM only)
-  if grep -qE '^\s*listen\s+(\[::\]:)?80' "$f" 2>/dev/null; then
-    echo "    removing $f (listens on 80)"
-    rm -f "$f"
-  fi
-done
-shopt -u nullglob
+echo "==> Backup current nginx.conf"
+if [[ -f /etc/nginx/nginx.conf ]]; then
+  cp -a /etc/nginx/nginx.conf "/etc/nginx/nginx.conf.bak.$(date +%Y%m%d%H%M%S)"
+fi
 
-echo "==> sites-enabled: only asset-register (remove default symlink, etc.)"
-rm -f /etc/nginx/sites-enabled/default
-install -d /etc/nginx/sites-available /etc/nginx/sites-enabled
-for f in /etc/nginx/sites-enabled/*; do
-  [ -e "$f" ] || continue
-  base=$(basename "$f")
-  if [ "$base" != "asset-register" ]; then
-    echo "    removing sites-enabled/$base"
-    rm -f "$f"
-  fi
-done
+echo "==> Install standalone nginx.conf (no sites-enabled / conf.d includes)"
+cp -f "$STANDALONE" /etc/nginx/nginx.conf
 
-echo "==> Install our vhost"
-cp -f "$APP_DIR/nginx.conf" /etc/nginx/sites-available/asset-register
-ln -sf /etc/nginx/sites-available/asset-register /etc/nginx/sites-enabled/asset-register
+echo "==> Clear old vhosts (not used anymore; avoids confusion on next apt change)"
+rm -f /etc/nginx/sites-enabled/*
+rm -f /etc/nginx/conf.d/*.conf 2>/dev/null || true
 
-echo "==> Test + start nginx"
+echo "==> Test + restart nginx (full restart, not reload)"
 nginx -t
-systemctl start nginx
-systemctl enable nginx
+systemctl restart nginx
 
-echo "==> Restart FastAPI (upstream :8000)"
+echo "==> Restart FastAPI upstream"
 systemctl restart asset-register || true
 sleep 2
-systemctl is-active --quiet asset-register && echo "asset-register: active" || echo "WARNING: asset-register is not active — run: journalctl -u asset-register -n 80 --no-pager"
+systemctl is-active --quiet asset-register && echo "asset-register: active" || echo "WARNING: asset-register failed — journalctl -u asset-register -n 80 --no-pager"
 
-echo "==> Which server answers :80 (first 500 chars of response body)"
-curl -s http://127.0.0.1/ | head -c 500 | tr '\n' ' '
+echo "==> Response check (should contain Employee Asset or html from FastAPI, NOT 'Welcome to nginx')"
+BODY=$(curl -sS http://127.0.0.1/ | head -c 400 | tr '\n' ' ')
+echo "$BODY"
 echo ""
-echo "==> HTTP codes"
-curl -s -o /dev/null -w "direct app :8000  -> %{http_code}\n" http://127.0.0.1:8000/ || true
-curl -s -o /dev/null -w "via nginx :80     -> %{http_code}\n" http://127.0.0.1/ || true
+if echo "$BODY" | grep -qi 'welcome to nginx'; then
+  echo "STILL seeing welcome text — check: sudo nginx -T | head -80"
+  exit 1
+fi
 
-echo "Done. If body still mentions nginx welcome, paste: sudo nginx -T"
+curl -s -o /dev/null -w "HTTP %{http_code} :8000 direct\n" http://127.0.0.1:8000/ || true
+curl -s -o /dev/null -w "HTTP %{http_code} :80 nginx\n" http://127.0.0.1/ || true
+echo "Done."
