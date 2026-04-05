@@ -12,9 +12,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
-from app import dashboard_json as _dashboard_json
-from app.dashboard_json import CATEGORIES_META, build_payload, verify_categories_meta_or_die
-from app.database import DB_PATH, get_connection, init_db
+from eamr import dashboard_json as _dashboard_json
+from eamr.dashboard_json import CATEGORIES_META, build_payload, verify_categories_meta_or_die
+from eamr.database import DB_PATH, get_connection, init_db
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "static"

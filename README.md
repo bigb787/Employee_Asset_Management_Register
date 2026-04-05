@@ -6,11 +6,11 @@ Repo: [github.com/bigb787/Employee_Asset_Management_Register](https://github.com
 
 ## Dashboard (SQLite + JSON export)
 
-- **Schema:** `data/schema.sql` — table `assets` with `category` values aligned to dashboard chips (see `app/dashboard_json.py` `CATEGORIES_META`): **Employee_Assets**, **Internal Assets**, **External Assets**, **Cloud_Assets**, **Admin_Assets**, **GatePass**, **InfoDesk_Leavers**.
+- **Schema:** `data/schema.sql` — table `assets` with `category` values aligned to dashboard chips (see `eamr/dashboard_json.py` `CATEGORIES_META`): **Employee_Assets**, **Internal Assets**, **External Assets**, **Cloud_Assets**, **GatePass**, **InfoDesk_Leavers**, **Admin_Assets**.
 - **Build JSON:** from repo root run  
   `python scripts/build_dashboard_data.py`  
   (creates/updates `data/assets.db` with demo rows if empty, writes `static/dashboard-data.json`).
-- **GitHub Actions:** `.github/workflows/build-dashboard.yml` runs the same script on pushes that touch `data/`, the script, or `app/dashboard_json.py`, then commits updated JSON (and DB if new).
+- **GitHub Actions:** `.github/workflows/build-dashboard.yml` runs the same script on pushes that touch `data/`, the script, or `eamr/dashboard_json.py`, then commits updated JSON (and DB if new).
 
 ## Run API + UI locally
 
@@ -24,13 +24,13 @@ python scripts/build_dashboard_data.py
 
 - **PowerShell:** `.\run.ps1`
 - **Command Prompt:** `run.bat`
-- **Either shell:** `python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`  
+- **Either shell:** `python -m uvicorn eamr.main:app --host 0.0.0.0 --port 8000 --reload`  
   (if `ModuleNotFoundError: uvicorn`, run `pip install -r requirements.txt` first)
 
 **Linux / macOS** (or Windows when `Scripts` is on PATH):
 
 ```bash
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn eamr.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 If imports fail, set `PYTHONPATH` to the project root. **PowerShell:**  

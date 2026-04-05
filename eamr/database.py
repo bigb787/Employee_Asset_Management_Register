@@ -21,7 +21,7 @@ def init_db() -> None:
         return
     conn = get_connection()
     try:
-        from app.dashboard_json import ensure_schema, seed_if_empty
+        from eamr.dashboard_json import ensure_schema, seed_if_empty
 
         ensure_schema(conn)
         seed_if_empty(conn)

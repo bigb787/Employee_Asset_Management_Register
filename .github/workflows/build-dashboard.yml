@@ -8,7 +8,7 @@ on:
     paths:
       - "data/**"
       - "scripts/build_dashboard_data.py"
-      - "app/dashboard_json.py"
+      - "eamr/dashboard_json.py"
       - "data/schema.sql"
       - ".github/workflows/build-dashboard.yml"
   workflow_dispatch:

@@ -1,4 +1,4 @@
--- Asset register — category chips (see app/dashboard_json.py CATEGORIES_META)
+-- Asset register — category chips (see eamr/dashboard_json.py CATEGORIES_META)
 CREATE TABLE IF NOT EXISTS assets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,

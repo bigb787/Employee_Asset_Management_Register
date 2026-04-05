@@ -1,7 +1,7 @@
 {
   "title": "Asset register",
   "subtitle": "All company assets in one place",
-  "generated_by": "app.dashboard_json",
+  "generated_by": "eamr.dashboard_json",
   "categories": [
     {
       "id": "employee_assets",
@@ -28,12 +28,6 @@
       "count": 0
     },
     {
-      "id": "admin_assets",
-      "label": "Admin_Assets",
-      "color": "#8B3A3A",
-      "count": 5
-    },
-    {
       "id": "gatepass",
       "label": "GatePass",
       "color": "#B45309",
@@ -44,6 +38,12 @@
       "label": "InfoDesk_Leavers",
       "color": "#7C3AED",
       "count": 0
+    },
+    {
+      "id": "admin_assets",
+      "label": "Admin_Assets",
+      "color": "#8B3A3A",
+      "count": 5
     }
   ],
   "items": [

@@ -14,9 +14,9 @@ CATEGORIES_META = [
     {"id": "internal_assets", "label": "Internal Assets", "color": "#4B2E83"},
     {"id": "external_assets", "label": "External Assets", "color": "#1E3A5F"},
     {"id": "cloud_assets", "label": "Cloud_Assets", "color": "#0F766E"},
-    {"id": "admin_assets", "label": "Admin_Assets", "color": "#8B3A3A"},
     {"id": "gatepass", "label": "GatePass", "color": "#B45309"},
     {"id": "infodesk_leavers", "label": "InfoDesk_Leavers", "color": "#7C3AED"},
+    {"id": "admin_assets", "label": "Admin_Assets", "color": "#8B3A3A"},
 ]
 
 EXPECTED_CATEGORY_IDS = frozenset(c["id"] for c in CATEGORIES_META)
@@ -26,13 +26,12 @@ _LEGACY_CHIP_IDS = frozenset(
 
 
 def verify_categories_meta_or_die() -> None:
-    """Fail fast if a different `app` package shadowed this module (old 5 legacy chips)."""
+    """Fail fast if CATEGORIES_META is wrong (e.g. old 5 legacy chips)."""
     got = frozenset(c["id"] for c in CATEGORIES_META)
     if got & _LEGACY_CHIP_IDS:
         raise RuntimeError(
-            f"Wrong app.dashboard_json: legacy ids {sorted(got & _LEGACY_CHIP_IDS)!r} in CATEGORIES_META. "
-            f"Loaded from {Path(__file__).resolve()}. Run from project root with PYTHONPATH set to that folder; "
-            "remove any other Python package named `app` that appears earlier on sys.path."
+            f"Wrong eamr.dashboard_json: legacy ids {sorted(got & _LEGACY_CHIP_IDS)!r} in CATEGORIES_META. "
+            f"Loaded from {Path(__file__).resolve()}. Run from project root with PYTHONPATH set to that folder."
         )
     if got != EXPECTED_CATEGORY_IDS:
         raise RuntimeError(
@@ -235,7 +234,7 @@ def build_payload(conn: sqlite3.Connection) -> dict:
     return {
         "title": "Asset register",
         "subtitle": "All company assets in one place",
-        "generated_by": "app.dashboard_json",
+        "generated_by": "eamr.dashboard_json",
         "categories": categories_out,
         "items": items,
     }

@@ -100,7 +100,6 @@
         color: var(--muted);
       }
       .chip-strip-wrap {
-        position: relative;
         margin-bottom: 24px;
       }
       .chip-strip {
@@ -109,18 +108,8 @@
         align-items: center;
         gap: 12px;
         overflow-x: visible;
-        /* Leave space so .chip-nav (absolute right) does not cover GatePass / InfoDesk chips */
-        padding: 12px 52px 14px 4px;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
+        padding: 12px 4px 14px;
         border-bottom: 1px solid var(--border);
-      }
-      .chip-strip::-webkit-scrollbar {
-        height: 6px;
-      }
-      .chip-strip::-webkit-scrollbar-thumb {
-        background: #c5cad6;
-        border-radius: 3px;
       }
       .chip {
         flex: 0 0 auto;
@@ -146,36 +135,6 @@
         font-weight: 700;
         color: var(--text);
         margin-left: 4px;
-      }
-      .chip-nav {
-        position: absolute;
-        right: 0;
-        top: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .chip-nav button {
-        width: 28px;
-        height: 24px;
-        border: 1px solid var(--border);
-        background: var(--card);
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        line-height: 1;
-        color: var(--muted);
-      }
-      .chip-nav button:hover {
-        background: #f0f2f5;
-      }
-      @media (max-width: 640px) {
-        .chip-nav {
-          display: none;
-        }
-        .chip-strip {
-          padding-right: 4px;
-        }
       }
       .panel {
         background: var(--card);
@@ -262,10 +221,6 @@
             <span class="chip-count">{{ c.count }}</span>
           </div>
           {% endfor %}
-        </div>
-        <div class="chip-nav" aria-hidden="true">
-          <button type="button" id="chipScrollL" title="Scroll left">◀</button>
-          <button type="button" id="chipScrollR" title="Scroll right">▶</button>
         </div>
       </div>
 
@@ -433,14 +388,6 @@
         });
         document.getElementById("btnMenu").addEventListener("click", function () {
           alert("Menu: add settings / help links here.");
-        });
-
-        var strip = document.getElementById("chipStrip");
-        document.getElementById("chipScrollL").addEventListener("click", function () {
-          strip.scrollBy({ left: -180, behavior: "smooth" });
-        });
-        document.getElementById("chipScrollR").addEventListener("click", function () {
-          strip.scrollBy({ left: 180, behavior: "smooth" });
         });
 
         load();
