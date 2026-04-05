@@ -19,6 +19,27 @@ CATEGORIES_META = [
     {"id": "infodesk_leavers", "label": "InfoDesk_Leavers", "color": "#7C3AED"},
 ]
 
+EXPECTED_CATEGORY_IDS = frozenset(c["id"] for c in CATEGORIES_META)
+_LEGACY_CHIP_IDS = frozenset(
+    {"employee_devices", "network", "infodesk_apps", "third_party"}
+)
+
+
+def verify_categories_meta_or_die() -> None:
+    """Fail fast if a different `app` package shadowed this module (old 5 legacy chips)."""
+    got = frozenset(c["id"] for c in CATEGORIES_META)
+    if got & _LEGACY_CHIP_IDS:
+        raise RuntimeError(
+            f"Wrong app.dashboard_json: legacy ids {sorted(got & _LEGACY_CHIP_IDS)!r} in CATEGORIES_META. "
+            f"Loaded from {Path(__file__).resolve()}. Run from project root with PYTHONPATH set to that folder; "
+            "remove any other Python package named `app` that appears earlier on sys.path."
+        )
+    if got != EXPECTED_CATEGORY_IDS:
+        raise RuntimeError(
+            f"Wrong CATEGORIES_META ids {sorted(got)!r}; expected {sorted(EXPECTED_CATEGORY_IDS)!r}. "
+            f"File: {Path(__file__).resolve()}"
+        )
+
 
 def _sql_category_check_line() -> str:
     inner = ", ".join(f"'{c['id']}'" for c in CATEGORIES_META)

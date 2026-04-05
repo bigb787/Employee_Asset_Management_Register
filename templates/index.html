@@ -221,7 +221,7 @@
       }
     </style>
   </head>
-  <body>
+  <body data-categories-b64="{{ bootstrap_b64 }}">
     <!-- ui-categories: {% for c in categories %}{{ c.id }}{% if not loop.last %},{% endif %}{% endfor %} -->
     <div class="page">
       <div id="err" class="err" style="display: none"></div>
@@ -306,9 +306,17 @@
 
         var categoriesBootstrap = [];
         try {
-          var bootEl = document.getElementById("categories-bootstrap");
-          if (bootEl && bootEl.textContent) {
-            categoriesBootstrap = JSON.parse(bootEl.textContent);
+          var b64 = document.body.getAttribute("data-categories-b64");
+          if (b64 && b64.trim()) {
+            categoriesBootstrap = JSON.parse(atob(b64.trim()));
+          }
+        } catch (e0) {}
+        try {
+          if (!categoriesBootstrap.length) {
+            var bootEl = document.getElementById("categories-bootstrap");
+            if (bootEl && bootEl.textContent) {
+              categoriesBootstrap = JSON.parse(bootEl.textContent.trim());
+            }
           }
         } catch (e1) {}
 
@@ -351,7 +359,7 @@
               '<span class="chip-dot" style="background:' +
               (c.color || "#888") +
               '"></span><span>' +
-              (c.label || c.id) +
+              escapeHtml(categoryLabel(c.id)) +
               '</span><span class="chip-count">' +
               (c.count != null ? c.count : 0) +
               "</span>";

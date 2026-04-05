@@ -8,7 +8,7 @@ if ($env:ASSET_REGISTER_PORT) { $Port = [int]$env:ASSET_REGISTER_PORT }
 
 Write-Host "Project: $(Get-Location)"
 Write-Host "Checking which Python loads (must show Employee_Assets, GatePass, not Employee devices)..."
-python -c "import pathlib; import app.dashboard_json as d; print('  dashboard_json:', pathlib.Path(d.__file__).resolve()); print('  labels:', [x['label'] for x in d.CATEGORIES_META])"
+python -c "import pathlib; from app.dashboard_json import verify_categories_meta_or_die; import app.dashboard_json as d; verify_categories_meta_or_die(); print('  dashboard_json:', pathlib.Path(d.__file__).resolve()); print('  labels:', [x['label'] for x in d.CATEGORIES_META])"
 
 $listen = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 if ($listen) {

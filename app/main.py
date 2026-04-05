@@ -1,4 +1,5 @@
 """Employee Asset Management Register — FastAPI."""
+import base64
 import csv
 import io
 import json
@@ -12,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from app import dashboard_json as _dashboard_json
-from app.dashboard_json import CATEGORIES_META, build_payload
+from app.dashboard_json import CATEGORIES_META, build_payload, verify_categories_meta_or_die
 from app.database import DB_PATH, get_connection, init_db
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -60,12 +61,15 @@ async def index(request: Request):
         f"InfoDesk_Leavers). Project folder: {ROOT.name}. Python file: "
         f"{Path(_dashboard_json.__file__).resolve()}"
     )
+    cats_json = json.dumps(cats)
+    bootstrap_b64 = base64.b64encode(cats_json.encode("utf-8")).decode("ascii")
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "categories": cats,
-            "categories_bootstrap_json": json.dumps(cats),
+            "categories_bootstrap_json": cats_json,
+            "bootstrap_b64": bootstrap_b64,
             "ui_verify": ui_verify,
             "html_title": f"Asset register ({len(cats)} categories · GatePass)",
         },
@@ -147,6 +151,7 @@ def export_assets_csv():
 
 @app.on_event("startup")
 def _startup():
+    verify_categories_meta_or_die()
     init_db()
     ids = [c["id"] for c in CATEGORIES_META]
     _LOG.warning(
